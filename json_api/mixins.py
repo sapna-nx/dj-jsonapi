@@ -66,6 +66,7 @@ class ListResourceMixin(object):
             data = [self.build_resource(instance) for instance in queryset]
 
         links = self.get_default_links()
+        links.update(self.get_list_action_links())
 
         response_data = self.build_response_body(
             links=links,

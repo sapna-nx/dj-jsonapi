@@ -40,6 +40,38 @@ class ResourceView(GenericAPIView):
 
         return links
 
+    def _get_dynamic_views(self):
+        detail_views = []
+        list_views = []
+        for methodname in dir(self.__class__):
+            attr = getattr(self.__class__, methodname)
+            httpmethods = getattr(attr, 'bind_to_methods', None)
+            detail = getattr(attr, 'detail', True)
+            if httpmethods:
+                if detail:
+                    detail_views.append(methodname.replace('_', '-'))
+                else:
+                    list_views.append(methodname.replace('_', '-'))
+
+        return detail_views, list_views
+
+    def get_detail_action_links(self, instance):
+        base_name = self.get_basename()
+        view_names = self._get_dynamic_views()[0]
+        pk = instance.pk
+
+        return OrderedDict(((
+            view_name, reverse("%s-%s" % (base_name, view_name), self.request, args=[pk])
+        ) for view_name in view_names))
+
+    def get_list_action_links(self):
+        base_name = self.get_basename()
+        view_names = self._get_dynamic_views()[1]
+
+        return OrderedDict(((
+            view_name, reverse("%s-%s" % (base_name, view_name), self.request)
+        ) for view_name in view_names))
+
     def get_resource_type(self, model=None):
         """
         Returns the resource type for a given model. Currently this defaults to
@@ -59,44 +91,12 @@ class ResourceView(GenericAPIView):
         Additionally, it includes any detail routes attached to the viewset.
         """
         view_name = field_mapping.get_detail_view_name(instance)
-        data = OrderedDict((
+        links = OrderedDict((
             ('self', reverse(view_name, self.request, args=(instance.pk, ))),
         ))
 
-        data.update(self._get_detail_links(instance))
-        return data
-
-    def _get_dynamic_views(self):
-        detail_views = []
-        list_views = []
-        for methodname in dir(self.__class__):
-            attr = getattr(self.__class__, methodname)
-            httpmethods = getattr(attr, 'bind_to_methods', None)
-            detail = getattr(attr, 'detail', True)
-            if httpmethods:
-                if detail:
-                    detail_views.append(methodname.replace('_', '-'))
-                else:
-                    list_views.append(methodname.replace('_', '-'))
-
-        return detail_views, list_views
-
-    def _get_detail_links(self, instance):
-        base_name = self.get_basename()
-        view_names = self._get_dynamic_views()[0]
-        pk = instance.pk
-
-        return OrderedDict(((
-            view_name, reverse("%s-%s" % (base_name, view_name), self.request, args=[pk])
-        ) for view_name in view_names))
-
-    def _get_list_links(self):
-        base_name = self.get_basename()
-        view_names = self._get_dynamic_views()[1]
-
-        return OrderedDict(((
-            view_name, reverse("%s-%s" % (base_name, view_name), self.request)
-        ) for view_name in view_names))
+        links.update(self.get_detail_action_links(instance))
+        return links
 
     def get_resource_meta(self, instance):
         pass
