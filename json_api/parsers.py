@@ -2,7 +2,7 @@
 from rest_framework import parsers
 
 
-class JSONParser(parsers.JSONParser):
+class APIParser(parsers.JSONParser):
     pass
 
 

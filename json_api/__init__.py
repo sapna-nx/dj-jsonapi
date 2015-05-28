@@ -5,7 +5,7 @@ DEFAULT_SETTINGS = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     'DEFAULT_PARSER_CLASSES': (
-        'json_api.parsers.JSONParser',
+        'json_api.parsers.APIParser',
         'json_api.parsers.FormParser',
         'json_api.parsers.MultiPartParser'
     ),
