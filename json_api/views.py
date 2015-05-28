@@ -22,7 +22,7 @@ class ResourceView(GenericAPIView):
         #     raise APIErrorOrSomething()
 
         for key in ('jsonapi', 'links', 'data', 'included', 'errors', 'meta'):
-            if kwargs.get(key) is not None:
+            if key in kwargs:
                 body[key] = kwargs[key]
         return body
 
