@@ -156,6 +156,14 @@ class ResourceView(GenericAPIView):
             return import_class(viewset)
         return viewset
 
+    def get_relationship(self, relname):
+        """
+        Returns the relationship for a given relationship name.
+        """
+        for rel in self.relationships:
+            if relname == self.get_relname(rel):
+                return rel
+
     def get_relationship_links(self, rel, instance):
         relname = self.get_relname(rel)
 
