@@ -149,7 +149,9 @@ class ResourceView(GenericAPIView):
         The `basename` to use for reversing URLs. You may need to override
         this if you provide a base_name to your router.
         """
-        return routers.BaseAPIRouter().get_default_base_name(self)
+        # meh?
+        self.__router = getattr(self, '__router', routers.BaseAPIRouter())
+        return self.__router.get_default_base_name(self)
 
     def get_relname(self, rel):
         """
@@ -179,7 +181,6 @@ class ResourceView(GenericAPIView):
         relname = self.get_relname(rel)
 
         return OrderedDict((
-            # ('self', self.request.build_absolute_uri('relationships/%s' % relname)),
             ('self', reverse(
                 '%s-relationship' % self.get_basename(),
                 self.request,
@@ -188,9 +189,11 @@ class ResourceView(GenericAPIView):
             # ('related', self.request.build_absolute_uri(relname)),
         ))
 
-    def get_relationship_linkage(self, rel):
+    def get_relationship_linkage(self, rel, instance):
         # don't forget to paginate the queryset
-        # obj = self.get_object()
+        # info = model_meta.get_field_info(instance)
+        # if info.relations[rel['accessor_name']].to_many:
+        #     pass
         # viewset = self.get_viewset(rel)
         pass
 
@@ -221,7 +224,7 @@ class ResourceView(GenericAPIView):
         ))
 
         if include_linkage:
-            data = self.get_relationship_linkage(rel)
+            data = self.get_relationship_linkage(rel, instance)
             if data:
                 rel_object['data'] = data
 
