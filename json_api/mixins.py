@@ -64,7 +64,14 @@ class ListResourceMixin(object):
             data = [self.build_resource(instance) for instance in page]
         else:
             data = [self.build_resource(instance) for instance in queryset]
-        return Response(data)
+
+        links = self.get_default_links()
+
+        response_data = self.build_response_body(
+            links=links,
+            data=data,
+        )
+        return Response(response_data)
 
 
 class RetrieveResourceMixin(object):

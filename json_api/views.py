@@ -10,19 +10,6 @@ from . import routers
 class ResourceView(GenericAPIView):
     relationships = None
 
-    def get_top_links(self):
-        links = OrderedDict([('self', self.request.build_absolute_uri()), ])
-
-        # This is kind of... meh
-        # could do with a better solution? maybe?
-        if self._is_list_view():
-            links.update(self._get_list_links())
-
-        if getattr(self, 'page', None):
-            links.update(self.paginator.get_links())
-
-        return links
-
     def build_response_body(self, **kwargs):
         """
         Format the top-level repsonse body.
@@ -39,11 +26,19 @@ class ResourceView(GenericAPIView):
                 body[key] = kwargs[key]
         return body
 
-    def _is_list_view(self):
-        # non-namespaced version
-        actual = self.request._request.resolver_match.url_name
-        desired = "%s-list" % self.get_basename()
-        return actual == desired
+    def get_default_links(self):
+        """
+        The default links for the current request. Contains the `self` link
+        for the current request, as well pagination links if applicable.
+        """
+        links = OrderedDict([
+            ('self', self.request.build_absolute_uri()),
+        ])
+
+        if getattr(self, 'page', None):
+            links.update(self.paginator.get_links())
+
+        return links
 
     def get_resource_type(self, model=None):
         """
