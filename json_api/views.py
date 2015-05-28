@@ -2,8 +2,7 @@
 import six
 from collections import OrderedDict
 from rest_framework.generics import GenericAPIView
-from rest_framework.utils import field_mapping
-# from rest_framework.utils import model_meta
+from rest_framework.utils import field_mapping, model_meta
 from .utils import import_class, reverse
 from . import routers
 
@@ -103,7 +102,7 @@ class ResourceView(GenericAPIView):
         ))
 
         attributes = serializer.data
-        relationships = self.get_relationship_objects()
+        relationships = self.get_relationship_objects(instance)
         links = self.get_resource_links(instance)
         meta = self.get_resource_meta(instance)
 
@@ -171,6 +170,7 @@ class ResourceView(GenericAPIView):
         ))
 
     def get_relationship_linkage(self, rel):
+        # don't forget to paginate the queryset
         # obj = self.get_object()
         # viewset = self.get_viewset(rel)
         pass
@@ -178,10 +178,48 @@ class ResourceView(GenericAPIView):
     def get_relationship_meta(self, rel):
         pass
 
-    def get_relationship_objects(self):
+    def build_relationhsip_object(self, rel, instance, include_linkage=False):
+        """
+        Builds a relationship object that represents to-one and to-many
+        relationships between the primary resource and related resources.
+        This conforms to the "relationship object" described under:
+        http://jsonapi.org/format/#document-structure-resource-objects-relationships
+
+        Set `include_linkage` to include relationship linkage data in the
+        request.
+
+        Note:
+        Paginated data is only supported for the primary request resource.
+        Because of this, linkage for to-many relationships should NOT be
+        included outside of a specific relationship request.
+
+        ie, do not include linkage for /api/books/1. Do include linkage
+        for /api/books/1/authors.
+
+        """
+        rel_object = OrderedDict((
+            ('links', self.get_relationship_links(rel, instance)),
+        ))
+
+        if include_linkage:
+            data = self.get_relationship_linkage(rel)
+            if data:
+                rel_object['data'] = data
+
+        meta = self.get_relationship_meta(rel)
+        if meta:
+            rel_object['meta'] = meta
+
+        return rel_object
+
+    def get_relationship_objects(self, instance):
         """
         Returns a dictionary of {relname: relationship object}
         This is defined by: http://jsonapi.org/format/#document-structure-links
+
+        This object is suitable for displaying the relationship data on a resource object.
+        Note that this excludes linkage for to-many relationships, as it may be 'large'
+        and require pagination. DRF pagination is not supported for related querysets.
 
         This function expects the view to have a `relationships` attribute containing a
         list of dictionaries containing the following keys:
@@ -202,28 +240,11 @@ class ResourceView(GenericAPIView):
         if not self.relationships:
             return None
 
-        rel_objects = OrderedDict()
-        for rel in self.relationships:
-            rel_object = OrderedDict((
-                ('links', self.get_relationship_links(rel)),
-            ))
+        info = model_meta.get_field_info(instance)
 
-            data = self.get_relationship_linkage(rel)
-            if data:
-                rel_object['data'] = data
-
-            meta = self.get_relationship_meta(rel)
-            if meta:
-                rel_object['meta'] = meta
-
-            rel_objects[self.get_relname(rel)] = rel_object
-        return rel_objects
-
-    def _get_rel_definition(self, relname):
-        """
-        Returns the relationship definition for a given relationship name.
-        """
-        for rel in self.relationships:
-            if self.get_relname(rel) == relname:
-                return rel
-        return None
+        return OrderedDict([(
+            self.get_relname(rel),
+            self.build_relationhsip_object(
+                rel, instance, info.relations[rel['accessor_name']].to_many
+            )
+        ) for rel in self.relationships])
