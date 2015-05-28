@@ -5,6 +5,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.utils import field_mapping
 # from rest_framework.utils import model_meta
 from .utils import import_class, reverse
+from . import routers
 
 
 class ResourceView(GenericAPIView):
@@ -13,10 +14,21 @@ class ResourceView(GenericAPIView):
     def get_top_links(self):
         links = OrderedDict([('self', self.request.build_absolute_uri()), ])
 
+        # This is kind of... meh
+        # could do with a better solution? maybe?
+        if self._is_list_view():
+            links.update(self._get_list_links())
+
         if getattr(self, 'page', None):
             links.update(self.paginator.get_links())
 
         return links
+
+    def _is_list_view(self):
+        # non-namespaced version
+        actual = self.request._request.resolver_match.url_name
+        desired = "%s-list" % self.get_basename()
+        return actual == desired
 
     def get_resource_type(self, model=None):
         """
@@ -41,8 +53,40 @@ class ResourceView(GenericAPIView):
             ('self', reverse(view_name, self.request, args=(instance.pk, ))),
         ))
 
-        # TODO: add in dynamic `@detail_route` routes
+        data.update(self._get_detail_links(instance))
         return data
+
+    def _get_dynamic_views(self):
+        detail_views = []
+        list_views = []
+        for methodname in dir(self.__class__):
+            attr = getattr(self.__class__, methodname)
+            httpmethods = getattr(attr, 'bind_to_methods', None)
+            detail = getattr(attr, 'detail', True)
+            if httpmethods:
+                if detail:
+                    detail_views.append(methodname.replace('_', '-'))
+                else:
+                    list_views.append(methodname.replace('_', '-'))
+
+        return detail_views, list_views
+
+    def _get_detail_links(self, instance):
+        base_name = self.get_basename()
+        view_names = self._get_dynamic_views()[0]
+        pk = instance.pk
+
+        return OrderedDict(((
+            view_name, reverse("%s-%s" % (base_name, view_name), self.request, args=[pk])
+        ) for view_name in view_names))
+
+    def _get_list_links(self):
+        base_name = self.get_basename()
+        view_names = self._get_dynamic_views()[1]
+
+        return OrderedDict(((
+            view_name, reverse("%s-%s" % (base_name, view_name), self.request)
+        ) for view_name in view_names))
 
     def get_resource_meta(self, instance):
         pass
@@ -90,6 +134,13 @@ class ResourceView(GenericAPIView):
 
         return data
 
+    def get_basename(self):
+        """
+        The `basename` to use for reversing URLs. You may need to override
+        this if you provide a base_name to your router.
+        """
+        return routers.BaseAPIRouter().get_default_base_name(self)
+
     def get_relname(self, rel):
         """
         Returns the relationship name used to represent the relationship.
@@ -106,12 +157,17 @@ class ResourceView(GenericAPIView):
             return import_class(viewset)
         return viewset
 
-    def get_relationship_links(self, rel):
+    def get_relationship_links(self, rel, instance):
         relname = self.get_relname(rel)
 
         return OrderedDict((
-            ('self', self.request.build_absolute_uri('relationships/%s' % relname)),
-            ('related', self.request.build_absolute_uri(relname)),
+            # ('self', self.request.build_absolute_uri('relationships/%s' % relname)),
+            ('self', reverse(
+                '%s-relationship' % self.get_basename(),
+                self.request,
+                args=[instance.pk, relname]
+            )),
+            # ('related', self.request.build_absolute_uri(relname)),
         ))
 
     def get_relationship_linkage(self, rel):
