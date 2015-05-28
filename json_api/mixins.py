@@ -134,3 +134,19 @@ class DestroyResourceMixin(object):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+
+class RetrieveRelationshipMixin(object):
+    def retrieve_relationship(self, request, *args, **kwargs):
+        return Response()
+
+
+class ManageRelationshipMixin(object):
+    def create_relationship(self, request, *args, **kwargs):
+        return Response()
+
+    def update_relationship(self, request, *args, **kwargs):
+        return Response()
+
+    def delete_relationship(self, request, *args, **kwargs):
+        return Response()

@@ -9,6 +9,7 @@ class GenericResourceViewSet(viewsets.ViewSetMixin, views.ResourceView):
 
 class ReadOnlyResourceViewSet(mixins.RetrieveResourceMixin,
                               mixins.ListResourceMixin,
+                              mixins.RetrieveRelationshipMixin,
                               GenericResourceViewSet):
     pass
 
@@ -18,5 +19,7 @@ class ResourceViewSet(mixins.CreateResourceMixin,
                       mixins.UpdateResourceMixin,
                       mixins.DestroyResourceMixin,
                       mixins.ListResourceMixin,
+                      mixins.RetrieveRelationshipMixin,
+                      mixins.ManageRelationshipMixin,
                       GenericResourceViewSet):
     pass
