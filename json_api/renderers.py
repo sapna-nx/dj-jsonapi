@@ -8,7 +8,7 @@ class APIRenderer(renderers.JSONRenderer):
     Renderer which serializes to JSON, following the json-api spec
     """
 
-    media_type = 'application/json'
+    media_type = 'application/vnd.api+json'
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         view = renderer_context['view']
