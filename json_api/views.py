@@ -23,6 +23,22 @@ class ResourceView(GenericAPIView):
 
         return links
 
+    def build_response_body(self, **kwargs):
+        """
+        Format the top-level repsonse body.
+        """
+        body = OrderedDict()
+
+        # TODO: One of the following keys is required. There should
+        # probably be an internal API error that's raised.
+        # if not any(key in kwargs for key in ('data', 'errors', 'meta')):
+        #     raise APIErrorOrSomething()
+
+        for key in ('jsonapi', 'links', 'data', 'included', 'errors', 'meta'):
+            if kwargs.get(key) is not None:
+                body[key] = kwargs[key]
+        return body
+
     def _is_list_view(self):
         # non-namespaced version
         actual = self.request._request.resolver_match.url_name
