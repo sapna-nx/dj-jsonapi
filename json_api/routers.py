@@ -2,8 +2,8 @@
 from collections import OrderedDict
 from rest_framework import routers
 from rest_framework.response import Response
+from django.conf.urls import url
 from django.core.urlresolvers import NoReverseMatch
-from .views import ResourceView
 from .utils import reverse
 
 
@@ -14,6 +14,8 @@ class APIRouter(routers.DefaultRouter):
         """
         Return a view to use as the API root.
         """
+        from .views import ResourceView
+
         api_root_dict = OrderedDict()
         list_name = self.routes[0].name
         for prefix, viewset, basename in self.registry:
@@ -23,16 +25,22 @@ class APIRouter(routers.DefaultRouter):
             _ignore_model_permissions = True
 
             def get(self, request, *args, **kwargs):
-                ret = OrderedDict()
+                links = OrderedDict((
+                    ('self', request.build_absolute_uri()),
+                ))
                 for key, url_name in api_root_dict.items():
                     try:
-                        ret[key] = reverse(
+                        links[key] = reverse(
                             url_name,
                             request=request,
                         )
                     except NoReverseMatch:
                         # Don't bail out if eg. no list routes exist, only detail routes.
                         continue
+
+                ret = OrderedDict((
+                    ('links', links),
+                ))
 
                 return Response(ret)
 
