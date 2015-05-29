@@ -273,8 +273,7 @@ class ResourceView(GenericAPIView):
 
         if include_linkage:
             data = self.get_relationship_linkage(rel, instance)
-            if data:
-                rel_object['data'] = data
+            rel_object['data'] = data
 
         meta = self.get_relationship_meta(rel)
         if meta:
