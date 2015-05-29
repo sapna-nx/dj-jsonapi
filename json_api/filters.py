@@ -20,7 +20,6 @@ class RelatedOrderingFilter(OrderingFilter):
         if ordering:
             ordering = [self.translate_field(field) for field in ordering]
 
-        print 'ordering', ordering
         return ordering
 
     def translate_field(self, field):
