@@ -18,6 +18,8 @@ class ResourceView(GenericAPIView):
         if relname:
             rel = self.get_relationship(relname)
 
+            # TODO: decide if this amount of coupling between the router and
+            # view is okay. Consider hyperlinked serializers as an example.
             if self.request.resolver_match.url_name.endswith('-relationship'):
                 return self.get_identity_serializer(rel)
 
@@ -229,11 +231,19 @@ class ResourceView(GenericAPIView):
 
     def get_relationship_linkage(self, rel, instance):
         # don't forget to paginate the queryset
-        # info = model_meta.get_field_info(instance)
-        # if info.relations[rel['accessor_name']].to_many:
-        #     pass
-        # viewset = self.get_viewset(rel)
-        pass
+        related = self.get_related_object(rel, instance)
+
+        if related is None:
+            return None
+
+        if not isinstance(related, QuerySet):
+            return OrderedDict((
+                ('id', related.pk),
+                ('type', self.get_resource_type(related)),
+            ))
+
+        serializer_class = self.get_identity_serializer(rel)
+        return serializer_class(related.only('pk'), many=True).data
 
     def get_relationship_meta(self, rel):
         pass
@@ -308,3 +318,36 @@ class ResourceView(GenericAPIView):
                 rel, instance, info.relations[rel['accessor_name']].to_many
             )
         ) for rel in self.relationships])
+
+    def get_related_object(self, rel, instance):
+        """
+        Returns a related object or queryset for a given relationship.
+        You may want to override this if you need to provide non-standard
+        queryset lookups.
+        """
+        info = model_meta.get_field_info(instance)
+        view = self.get_viewset(rel)()
+        accessor_name = rel['accessor_name']
+
+        # Perform the lookup filtering.
+        queryset = view.get_queryset()
+        field = instance._meta.get_field(accessor_name)
+
+        if info.relations[accessor_name].to_many:
+            field_name = field.related.name
+            return queryset.filter(**{field_name: instance.pk})
+
+        else:
+            field_name = field.field.name
+            # It is possible that the relationship doesn't exist. In that
+            # case, it is valid to return None
+            try:
+                related = queryset.get(**{field_name: instance.pk})
+            except queryset.model.DoesNotExist:
+                related = None
+
+            # May raise a permission denied
+            if related is not None:
+                view.check_object_permissions(self.request, related)
+
+            return related

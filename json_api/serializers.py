@@ -6,6 +6,9 @@ from json_api import exceptions
 
 
 class CheckedTypeField(serializers.Field):
+    def __init__(self, **kwargs):
+        kwargs['source'] = '*'
+        super(CheckedTypeField, self).__init__(**kwargs)
 
     def run_validation(self, data):
         expected = self.to_representation()
@@ -21,8 +24,7 @@ class CheckedTypeField(serializers.Field):
         return six.text_type(data)
 
     def to_representation(self, value=None):
-        # ignore the incoming value
-        return self.Meta.model._meta.verbose_name
+        return self.parent.Meta.model._meta.verbose_name
 
 
 class ResourceSerializer(serializers.ModelSerializer):
