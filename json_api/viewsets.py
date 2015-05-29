@@ -1,9 +1,9 @@
 
-from rest_framework import viewsets
-from . import views, mixins
+from rest_framework.viewsets import ViewSetMixin
+from . import generics, mixins
 
 
-class GenericResourceViewSet(viewsets.ViewSetMixin, views.ResourceView):
+class GenericResourceViewSet(ViewSetMixin, generics.ResourceView):
     pass
 
 
