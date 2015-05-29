@@ -49,12 +49,17 @@ DEFAULTS.update({
         'json_api.parsers.MultiPartParser'
     ),
     'DEFAULT_FILTER_BACKENDS': (
-        'rest_framework.filters.OrderingFilter',
+        'json_api.filters.RelatedOrderingFilter',
         'rest_framework.filters.SearchFilter',
     ),
     'ORDERING_PARAM': 'sort',
     'DEFAULT_PAGINATION_CLASS': 'json_api.pagination.PageNumberPagination',
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'json_api.negotiation.Negotiator',
+})
+
+# JSON-API settings
+DEFAULTS.update({
+    'ORDERING_DELIMITER': '.',
 })
 
 
