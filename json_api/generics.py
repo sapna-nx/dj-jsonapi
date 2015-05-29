@@ -1,14 +1,51 @@
 
 import six
 from collections import OrderedDict
+from django.db.models.query import QuerySet
 from rest_framework.generics import GenericAPIView
 from rest_framework.utils import field_mapping, model_meta
-from .utils import import_class, reverse
-from . import routers
+
+from json_api.utils import import_class, reverse
+from json_api import serializers, routers
 
 
 class ResourceView(GenericAPIView):
     relationships = None
+
+    def get_serializer_class(self, relname=None):
+        relname = getattr(self, 'kwargs', {}).get('relname')
+
+        if relname:
+            rel = self.get_relationship(relname)
+
+            if self.request.resolver_match.url_name.endswith('-relationship'):
+                return self.get_identity_serializer(rel)
+
+            elif self.request.resolver_match.url_name.endswith('-related'):
+                return self.get_related_serializer(rel)
+
+        return super(ResourceView, self).get_serializer_class()
+
+    def get_identity_serializer(self, rel):
+        """
+        Returns a serializer for a relationship that is suitable for
+        representing its resource identifiers.
+        """
+        view = self.get_viewset(rel)()
+
+        class ResourceRelationshipIdentifier(serializers.ResourceIdentifierSerializer):
+            class Meta:
+                model = view.get_serializer_class().Meta.model
+
+        return ResourceRelationshipIdentifier
+
+    def get_related_serializer(self, rel):
+        """
+        Returns the serializer used by a related resource.
+        """
+        # TODO: this is correct, right?
+        view = self.get_viewset(rel)()
+        return view.get_serializer_class()
 
     def build_response_body(self, **kwargs):
         """
@@ -176,6 +213,7 @@ class ResourceView(GenericAPIView):
         for rel in self.relationships:
             if relname == self.get_relname(rel):
                 return rel
+        return None
 
     def get_relationship_links(self, rel, instance):
         relname = self.get_relname(rel)
