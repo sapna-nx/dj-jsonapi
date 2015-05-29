@@ -314,7 +314,7 @@ class ResourceView(GenericAPIView):
         return OrderedDict([(
             self.get_relname(rel),
             self.build_relationhsip_object(
-                rel, instance, info.relations[rel['accessor_name']].to_many
+                rel, instance, not info.relations[rel['accessor_name']].to_many
             )
         ) for rel in self.relationships])
 
