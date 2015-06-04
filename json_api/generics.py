@@ -33,7 +33,7 @@ class ResourceView(GenericAPIView):
         Returns a serializer for a relationship that is suitable for
         representing its resource identifiers.
         """
-        view = self.get_viewset(rel)()
+        view = self.get_viewset(rel)
 
         class ResourceRelationshipIdentifier(serializers.ResourceIdentifierSerializer):
             class Meta:
@@ -46,7 +46,7 @@ class ResourceView(GenericAPIView):
         Returns the serializer used by a related resource.
         """
         # TODO: this is correct, right?
-        view = self.get_viewset(rel)()
+        view = self.get_viewset(rel)
         return view.get_serializer_class()
 
     def build_response_body(self, **kwargs):
@@ -201,11 +201,13 @@ class ResourceView(GenericAPIView):
 
     def get_viewset(self, rel):
         """
-        Returns the viewset for the givent relationship. Resolves class paths.
+        Returns a viewset instance for the given relationship. Resolves class paths.
         """
         viewset = rel['viewset']
         if isinstance(viewset, six.string_types):
             return import_class(viewset)
+        viewset = viewset()
+        viewset.request = self.request
         return viewset
 
     def get_relationship(self, relname):
@@ -325,7 +327,7 @@ class ResourceView(GenericAPIView):
         queryset lookups.
         """
         info = model_meta.get_field_info(instance)
-        view = self.get_viewset(rel)()
+        view = self.get_viewset(rel)
         accessor_name = rel['accessor_name']
 
         # Perform the lookup filtering.
