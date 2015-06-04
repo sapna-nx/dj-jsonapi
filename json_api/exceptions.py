@@ -1,8 +1,9 @@
 
 from rest_framework import exceptions, status
+from django.utils.encoding import force_text
 
 
-class CONFLICT(exceptions.APIException):
+class Conflict(exceptions.APIException):
     status_code = status.HTTP_409_CONFLICT
 
     def __init__(self, detail):
