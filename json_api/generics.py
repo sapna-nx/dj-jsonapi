@@ -11,6 +11,7 @@ from json_api import serializers, routers
 
 class ResourceView(GenericAPIView):
     relationships = None
+    relname_url_kwarg = 'relname'
 
     def get_serializer_class(self, relname=None):
         relname = getattr(self, 'kwargs', {}).get('relname')
@@ -210,13 +211,29 @@ class ResourceView(GenericAPIView):
         viewset.request = self.request
         return viewset
 
-    def get_relationship(self, relname):
+    def get_relationship(self, relname=None):
         """
-        Returns the relationship for a given relationship name.
+        Returns the relationship for a given relationship name. If no name is
+        specified, it attempts to get the relationship for the current request.
+
+        Note that this returns the relationship definition. To get a
+        representation of the relationship, call `build_relationhsip_object()`.
+        To access related data, call `get_related_object()`
         """
+        if relname is None:
+            assert self.relname_url_kwarg in self.kwargs, (
+                'Expected view %s to be called with a URL keyword argument '
+                'named "%s". Fix your URL conf, or set the '
+                '`.relname_url_kwarg` attribute on the view correctly.' %
+                (self.__class__.__name__, self.relname_url_kwarg)
+            )
+            relname = self.kwargs[self.relname_url_kwarg]
+
         for rel in self.relationships:
             if relname == self.get_relname(rel):
                 return rel
+
+        # TODO: should we raise a 404 or api error?
         return None
 
     def get_relationship_links(self, rel, instance):
