@@ -59,7 +59,7 @@ class ResourceView(GenericAPIView):
         # TODO: One of the following keys is required. There should
         # probably be an internal API error that's raised.
         # if not any(key in kwargs for key in ('data', 'errors', 'meta')):
-        #     raise APIErrorOrSomething()
+        #     raise APIErrorOrSomething() or ImproperlyConfigured()
 
         for key in ('jsonapi', 'links', 'data', 'included', 'errors', 'meta'):
             if key in kwargs:
@@ -189,16 +189,16 @@ class ResourceView(GenericAPIView):
         The `basename` to use for reversing URLs. You may need to override
         this if you provide a base_name to your router.
         """
-        # meh?
+        # TODO: make less meh?
         self.__router = getattr(self, '__router', routers.BaseAPIRouter())
         return self.__router.get_default_base_name(self)
 
     def get_relname(self, rel):
         """
         Returns the relationship name used to represent the relationship.
-        Defaults to the `accessor_name` unless a `relname` is provided.
+        Defaults to the `attname` unless a `relname` is provided.
         """
-        return rel.get('relname', rel['accessor_name'])
+        return rel.get('relname', rel['attname'])
 
     def get_viewset(self, rel):
         """
@@ -312,10 +312,10 @@ class ResourceView(GenericAPIView):
         This function expects the view to have a `relationships` attribute containing a
         list of dictionaries containing the following keys:
 
-        - accessor_name: The name used to access the field on the underlying model. This
+        - attname: The name used to access the field on the underlying model. This
           value is passed to the model meta's `get_field` method.
         - relname (optional): The  name to use for the relationship. This is functionally
-          an alias for, and defaults to, the `accessor_name`. Useful for overriding
+          an alias for, and defaults to, the `attname`. Useful for overriding
           automatically generated accessor names.
         - viewset: The viewset to use for controlling access to the related object set.
           Acceptable values are either the viewset or a class path to the viewset. The
@@ -333,7 +333,7 @@ class ResourceView(GenericAPIView):
         return OrderedDict([(
             self.get_relname(rel),
             self.build_relationhsip_object(
-                rel, instance, not info.relations[rel['accessor_name']].to_many
+                rel, instance, not info.relations[rel['attname']].to_many
             )
         ) for rel in self.relationships])
 
@@ -345,13 +345,13 @@ class ResourceView(GenericAPIView):
         """
         info = model_meta.get_field_info(instance)
         view = self.get_viewset(rel)
-        accessor_name = rel['accessor_name']
+        attname = rel['attname']
 
         # Perform the lookup filtering.
         queryset = view.get_queryset()
-        field = instance._meta.get_field(accessor_name)
+        field = instance._meta.get_field(attname)
 
-        if info.relations[accessor_name].to_many:
+        if info.relations[attname].to_many:
             field_name = field.related.name
             return queryset.filter(**{field_name: instance.pk})
 
