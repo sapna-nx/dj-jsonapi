@@ -4,7 +4,7 @@ from rest_framework import routers
 from rest_framework.response import Response
 from django.conf.urls import url
 from django.core.urlresolvers import NoReverseMatch
-from .utils import reverse
+from .utils.reverse import reverse
 
 
 class BaseAPIRouter(routers.SimpleRouter):
@@ -20,7 +20,7 @@ class BaseAPIRouter(routers.SimpleRouter):
                 'get': 'retrieve_relationship',
                 'post': 'create_relationship',
                 'patch': 'update_relationship',
-                'delete': 'destroy_relationship'
+                'delete': 'destroy_relationship',
             },
             name='{basename}-relationship',
             initkwargs={'suffix': 'Relationship'},
@@ -123,7 +123,7 @@ class APIRouter(routers.DefaultRouter, BaseAPIRouter):
         """
         Return a view to use as the API root.
         """
-        from .views import ResourceView
+        from .generics import ResourceView
 
         api_root_dict = OrderedDict()
         list_name = self.routes[0].name
