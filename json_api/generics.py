@@ -1,17 +1,32 @@
 
-import six
 from collections import OrderedDict
 from django.db.models.query import QuerySet
 from rest_framework.generics import GenericAPIView
 from rest_framework.utils import field_mapping, model_meta
 
-from json_api.utils import import_class, reverse
+from json_api.utils.reverse import reverse
+from json_api.utils.rels import _resoved_rel
 from json_api import serializers, routers
 
 
 class ResourceView(GenericAPIView):
     relationships = None
     relname_url_kwarg = 'relname'
+
+    def __init__(self, *args, **kwargs):
+        return super(ResourceView, self).__init__(*args, **kwargs)
+
+        model = self.get_serializer_class()._Meta.model
+        self.model_info = model_meta.get_field_info(model)
+
+        if self.relationships is not None:
+            self.relationships = self._resolve_relationships(self.model_info, self.relationships)
+
+    def _resolve_relationships(self, model_info, relationships):
+        return [
+            _resoved_rel(info=model_info.relations[rel.attname], **rel)
+            for rel in self.relationships
+        ]
 
     def get_serializer_class(self, relname=None):
         relname = getattr(self, 'kwargs', {}).get('relname')
@@ -34,11 +49,9 @@ class ResourceView(GenericAPIView):
         Returns a serializer for a relationship that is suitable for
         representing its resource identifiers.
         """
-        view = self.get_viewset(rel)
-
         class ResourceRelationshipIdentifier(serializers.ResourceIdentifierSerializer):
             class Meta:
-                model = view.get_serializer_class().Meta.model
+                model = rel.viewset.get_serializer_class().Meta.model
 
         return ResourceRelationshipIdentifier
 
@@ -47,8 +60,7 @@ class ResourceView(GenericAPIView):
         Returns the serializer used by a related resource.
         """
         # TODO: this is correct, right?
-        view = self.get_viewset(rel)
-        return view.get_serializer_class()
+        return rel.viewset.get_serializer_class()
 
     def build_response_body(self, **kwargs):
         """
@@ -193,24 +205,6 @@ class ResourceView(GenericAPIView):
         self.__router = getattr(self, '__router', routers.BaseAPIRouter())
         return self.__router.get_default_base_name(self)
 
-    def get_relname(self, rel):
-        """
-        Returns the relationship name used to represent the relationship.
-        Defaults to the `attname` unless a `relname` is provided.
-        """
-        return rel.get('relname', rel['attname'])
-
-    def get_viewset(self, rel):
-        """
-        Returns a viewset instance for the given relationship. Resolves class paths.
-        """
-        viewset = rel['viewset']
-        if isinstance(viewset, six.string_types):
-            return import_class(viewset)
-        viewset = viewset()
-        viewset.request = self.request
-        return viewset
-
     def get_relationship(self, relname=None):
         """
         Returns the relationship for a given relationship name. If no name is
@@ -230,20 +224,18 @@ class ResourceView(GenericAPIView):
             relname = self.kwargs[self.relname_url_kwarg]
 
         for rel in self.relationships:
-            if relname == self.get_relname(rel):
+            if relname == rel.relname:
                 return rel
 
         # TODO: should we raise a 404 or api error?
         return None
 
     def get_relationship_links(self, rel, instance):
-        relname = self.get_relname(rel)
-
         return OrderedDict((
             ('self', reverse(
                 '%s-relationship' % self.get_basename(),
                 self.request,
-                args=[instance.pk, relname]
+                args=[instance.pk, rel.relname]
             )),
             # ('related', self.request.build_absolute_uri(relname)),
         ))
@@ -328,12 +320,10 @@ class ResourceView(GenericAPIView):
         if not self.relationships:
             return None
 
-        info = model_meta.get_field_info(instance)
-
         return OrderedDict([(
-            self.get_relname(rel),
+            rel.relname,
             self.build_relationhsip_object(
-                rel, instance, not info.relations[rel['attname']].to_many
+                rel, instance, not rel.info.to_many
             )
         ) for rel in self.relationships])
 
@@ -343,15 +333,11 @@ class ResourceView(GenericAPIView):
         You may want to override this if you need to provide non-standard
         queryset lookups.
         """
-        info = model_meta.get_field_info(instance)
-        view = self.get_viewset(rel)
-        attname = rel['attname']
-
         # Perform the lookup filtering.
-        queryset = view.get_queryset()
-        field = instance._meta.get_field(attname)
+        queryset = rel.viewset.get_queryset()
+        field = instance._meta.get_field(rel.attname)
 
-        if info.relations[attname].to_many:
+        if rel.info.to_many:
             field_name = field.related.name
             return queryset.filter(**{field_name: instance.pk})
 
@@ -366,6 +352,6 @@ class ResourceView(GenericAPIView):
 
             # May raise a permission denied
             if related is not None:
-                view.check_object_permissions(self.request, related)
+                rel.viewset.check_object_permissions(self.request, related)
 
             return related
