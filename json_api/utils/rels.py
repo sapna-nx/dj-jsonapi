@@ -17,12 +17,6 @@ class rel(namedtuple('Relationship', ['attname', 'viewset', 'relname'])):
 
     """
     def __new__(cls, attname, viewset, relname=None):
-        if isinstance(viewset, six.string_types):
-            viewset = import_class(viewset)
-
-        # TODO: move to _resolved_rel maybe?
-        if inspect.isclass(viewset):
-            viewset = viewset()
 
         if not relname:
             relname = attname
@@ -30,10 +24,18 @@ class rel(namedtuple('Relationship', ['attname', 'viewset', 'relname'])):
         return super(rel, cls).__new__(cls, attname, viewset, relname)
 
 
-class _resolved_rel(namedtuple('ResolvedRelationship', ['attname', 'relname', 'viewset', 'info'])):
+class resolved_rel(namedtuple('ResolvedRelationship', ['attname', 'relname', 'viewset', 'info'])):
     """
     A 'resolved' relationship descriptor that contains all of the relevant metadata
     about the relationship.
 
     """
-    pass
+    def __new__(cls, attname, relname, viewset, info, request):
+        if isinstance(viewset, six.string_types):
+            viewset = import_class(viewset)
+
+        if inspect.isclass(viewset):
+            viewset = viewset()
+
+        viewset.request = request
+        return super(resolved_rel, cls).__new__(cls, attname, relname, viewset, info)
