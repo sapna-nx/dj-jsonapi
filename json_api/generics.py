@@ -33,9 +33,13 @@ class ResourceView(GenericAPIView):
         ) for rel in self.relationships]
 
     def get_serializer_class(self, relname=None):
-        relname = getattr(self, 'kwargs', {}).get('relname')
+        # if a relname isn't supplied, try to fetch from the view kwargs.
+        if relname is None:
+            # kwargs may not be set if this viewset is being accessed by
+            # another vieweset.
+            relname = getattr(self, 'kwargs', {}).get(self.relname_url_kwarg)
 
-        if relname:
+        if relname is not None:
             rel = self.get_relationship(relname)
 
             # TODO: decide if this amount of coupling between the router and
