@@ -2,8 +2,9 @@
 from collections import OrderedDict
 from django.db.models.query import QuerySet
 from rest_framework.generics import GenericAPIView
-from rest_framework.utils import field_mapping, model_meta
+from rest_framework.utils import field_mapping
 
+from json_api.utils import model_meta
 from json_api.utils.reverse import reverse
 from json_api.utils.rels import resolved_rel
 from json_api import serializers, routers

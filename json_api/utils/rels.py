@@ -10,7 +10,8 @@ class rel(namedtuple('Relationship', ['attname', 'viewset', 'relname'])):
     """
     Relationship descriptor.
 
-    *attname* Corresponds to the attname property of the model's related field.
+    *attname* Corresponds to the `name` property of a forward relation's field,
+              or the `name` property of a reverse relation's ForeignObjectRel.
     *viewset* The viewset that manages the related resource collection.
     *relname* The display name for the relationship. Defaults to attname if
               not provided.
