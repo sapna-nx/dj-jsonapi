@@ -1,6 +1,6 @@
 
 from collections import OrderedDict
-from rest_framework import routers
+from rest_framework import routers, views
 from rest_framework.response import Response
 from django.conf.urls import url
 from django.core.urlresolvers import NoReverseMatch
@@ -123,14 +123,12 @@ class APIRouter(routers.DefaultRouter, BaseAPIRouter):
         """
         Return a view to use as the API root.
         """
-        from .generics import ResourceView
-
         api_root_dict = OrderedDict()
         list_name = self.routes[0].name
         for prefix, viewset, basename in self.registry:
             api_root_dict[prefix] = list_name.format(basename=basename)
 
-        class APIRoot(ResourceView):
+        class APIRoot(views.APIView):
             _ignore_model_permissions = True
 
             def get(self, request, *args, **kwargs):
