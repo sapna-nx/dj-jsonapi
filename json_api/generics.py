@@ -5,7 +5,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.utils import field_mapping, model_meta
 
 from json_api.utils.reverse import reverse
-from json_api.utils.rels import _resoved_rel
+from json_api.utils.rels import resolved_rel
 from json_api import serializers, routers
 
 
@@ -14,19 +14,23 @@ class ResourceView(GenericAPIView):
     relname_url_kwarg = 'relname'
 
     def __init__(self, *args, **kwargs):
-        return super(ResourceView, self).__init__(*args, **kwargs)
+        super(ResourceView, self).__init__(*args, **kwargs)
 
-        model = self.get_serializer_class()._Meta.model
+        model = self.get_serializer_class().Meta.model
         self.model_info = model_meta.get_field_info(model)
 
-        if self.relationships is not None:
-            self.relationships = self._resolve_relationships(self.model_info, self.relationships)
+    def initial(self, *args, **kwargs):
+        super(ResourceView, self).initial(*args, **kwargs)
 
-    def _resolve_relationships(self, model_info, relationships):
-        return [
-            _resoved_rel(info=model_info.relations[rel.attname], **rel)
-            for rel in self.relationships
-        ]
+        if self.relationships:
+            self.relationships = self.resolve_relationships()
+
+    def resolve_relationships(self):
+        return [resolved_rel(
+            info=self.model_info.relations[rel.attname],
+            request=self.request,
+            **rel._asdict()
+        ) for rel in self.relationships]
 
     def get_serializer_class(self, relname=None):
         relname = getattr(self, 'kwargs', {}).get('relname')
