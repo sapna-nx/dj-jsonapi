@@ -15,8 +15,18 @@ class FormParser(parsers.FormParser):
 
         Note that the QueryDict is flattened into a plain dictionary.
         """
+        request = parser_context['request']
         view = parser_context['view']
         data = super(FormParser, self).parse(stream, media_type, parser_context)
+
+        overrides = {}
+        for param in [
+            'csrfmiddlewaretoken', request._METHOD_PARAM,
+            request._CONTENT_PARAM, request._CONTENTTYPE_PARAM,
+        ]:
+            value = data.pop(param, [None])[0]
+            if value:
+                overrides[param] = value
 
         data = {
             'data': {
@@ -25,9 +35,12 @@ class FormParser(parsers.FormParser):
             }
         }
 
+        data.update(overrides)
+
         try:
             lookup_url_kwarg = view.lookup_url_kwarg or view.lookup_field
-            data['data']['id'] = view.kwargs[lookup_url_kwarg]
+            # TODO: type conversion shouldn't be hardcoded here.
+            data['data']['id'] = int(view.kwargs[lookup_url_kwarg])
         except KeyError:
             pass
 
@@ -38,7 +51,6 @@ class MultiPartParser(parsers.MultiPartParser):
     """
     Parser for multipart form data, which may include file data.
     """
-
     def parse(self, stream, media_type=None, parser_context=None):
         """
         Parses the incoming bytestream as a multipart encoded form,
@@ -46,9 +58,19 @@ class MultiPartParser(parsers.MultiPartParser):
         `.data` will be a `QueryDict` containing all the form parameters.
         `.files` will be a `QueryDict` containing all the form files.
         """
+        request = parser_context['request']
         view = parser_context['view']
         data_and_files = super(MultiPartParser, self).parse(stream, media_type, parser_context)
         data = data_and_files.data
+
+        overrides = {}
+        for param in [
+            'csrfmiddlewaretoken', request._METHOD_PARAM,
+            request._CONTENT_PARAM, request._CONTENTTYPE_PARAM,
+        ]:
+            value = data.pop(param, [None])[0]
+            if value:
+                overrides[param] = value
 
         data = {
             'data': {
@@ -57,9 +79,12 @@ class MultiPartParser(parsers.MultiPartParser):
             }
         }
 
+        data.update(overrides)
+
         try:
             lookup_url_kwarg = view.lookup_url_kwarg or view.lookup_field
-            data['data']['id'] = view.kwargs[lookup_url_kwarg]
+            # TODO: type conversion shouldn't be hardcoded here.
+            data['data']['id'] = int(view.kwargs[lookup_url_kwarg])
         except KeyError:
             pass
 
