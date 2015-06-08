@@ -3,7 +3,7 @@ from rest_framework.viewsets import ViewSetMixin
 from . import generics, mixins
 
 
-class GenericResourceViewSet(ViewSetMixin, generics.ResourceView):
+class GenericResourceViewSet(ViewSetMixin, generics.GenericResourceView):
     pass
 
 

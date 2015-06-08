@@ -7,31 +7,23 @@ from rest_framework.utils import field_mapping
 from json_api.utils import model_meta
 from json_api.utils.reverse import reverse
 from json_api.utils.rels import resolved_rel
-from json_api import serializers, routers
+from json_api import serializers, views
 
 
-class ResourceView(GenericAPIView):
-    relationships = None
-    relname_url_kwarg = 'relname'
+class GenericResourceView(views.ResourceView, GenericAPIView):
 
     def __init__(self, *args, **kwargs):
-        super(ResourceView, self).__init__(*args, **kwargs)
+        super(GenericResourceView, self).__init__(*args, **kwargs)
 
         model = self.get_serializer_class().Meta.model
         self.model_info = model_meta.get_field_info(model)
 
-    def initial(self, *args, **kwargs):
-        super(ResourceView, self).initial(*args, **kwargs)
-
-        if self.relationships:
-            self.relationships = self.resolve_relationships()
-
-    def resolve_relationships(self):
+    def resolve_relationships(self, relationships):
         return [resolved_rel(
             info=self.model_info.relations[rel.attname],
             request=self.request,
             **rel._asdict()
-        ) for rel in self.relationships]
+        ) for rel in relationships]
 
     def get_serializer_class(self, relname=None):
         # if a relname isn't supplied, try to fetch from the view kwargs.
@@ -51,7 +43,7 @@ class ResourceView(GenericAPIView):
             elif self.request.resolver_match.url_name.endswith('-related'):
                 return self.get_related_serializer(rel)
 
-        return super(ResourceView, self).get_serializer_class()
+        return super(GenericResourceView, self).get_serializer_class()
 
     def get_identity_serializer(self, rel):
         """
@@ -71,67 +63,18 @@ class ResourceView(GenericAPIView):
         # TODO: this is correct, right?
         return rel.viewset.get_serializer_class()
 
-    def build_response_body(self, **kwargs):
-        """
-        Format the top-level repsonse body.
-        """
-        body = OrderedDict()
-
-        # TODO: One of the following keys is required. There should
-        # probably be an internal API error that's raised.
-        # if not any(key in kwargs for key in ('data', 'errors', 'meta')):
-        #     raise APIErrorOrSomething() or ImproperlyConfigured()
-
-        for key in ('jsonapi', 'links', 'data', 'included', 'errors', 'meta'):
-            if key in kwargs:
-                body[key] = kwargs[key]
-        return body
-
     def get_default_links(self):
         """
-        The default links for the current request. Contains the `self` link
-        for the current request, as well pagination links if applicable.
+        The default top-level links for the current request. Contains the
+        `self` link for the current request, as well pagination links if
+        applicable.
         """
-        links = OrderedDict([
-            ('self', self.request.build_absolute_uri()),
-        ])
+        links = super(GenericResourceView, self).get_default_links()
 
         if getattr(self, 'page', None):
             links.update(self.paginator.get_links())
 
         return links
-
-    def _get_dynamic_views(self):
-        detail_views = []
-        list_views = []
-        for methodname in dir(self.__class__):
-            attr = getattr(self.__class__, methodname)
-            httpmethods = getattr(attr, 'bind_to_methods', None)
-            detail = getattr(attr, 'detail', True)
-            if httpmethods:
-                if detail:
-                    detail_views.append(methodname.replace('_', '-'))
-                else:
-                    list_views.append(methodname.replace('_', '-'))
-
-        return detail_views, list_views
-
-    def get_detail_action_links(self, instance):
-        base_name = self.get_basename()
-        view_names = self._get_dynamic_views()[0]
-        pk = instance.pk
-
-        return OrderedDict(((
-            view_name, reverse("%s-%s" % (base_name, view_name), self.request, args=[pk])
-        ) for view_name in view_names))
-
-    def get_list_action_links(self):
-        base_name = self.get_basename()
-        view_names = self._get_dynamic_views()[1]
-
-        return OrderedDict(((
-            view_name, reverse("%s-%s" % (base_name, view_name), self.request)
-        ) for view_name in view_names))
 
     def get_resource_type(self, model=None):
         """
@@ -156,7 +99,7 @@ class ResourceView(GenericAPIView):
             ('self', reverse(view_name, self.request, args=(instance.pk, ))),
         ))
 
-        links.update(self.get_detail_action_links(instance))
+        links.update(self.get_resource_actions(instance.pk))
         return links
 
     def get_resource_meta(self, instance):
@@ -204,40 +147,6 @@ class ResourceView(GenericAPIView):
             data['meta'] = meta
 
         return data
-
-    def get_basename(self):
-        """
-        The `basename` to use for reversing URLs. You may need to override
-        this if you provide a base_name to your router.
-        """
-        # TODO: make less meh?
-        self.__router = getattr(self, '__router', routers.BaseAPIRouter())
-        return self.__router.get_default_base_name(self)
-
-    def get_relationship(self, relname=None):
-        """
-        Returns the relationship for a given relationship name. If no name is
-        specified, it attempts to get the relationship for the current request.
-
-        Note that this returns the relationship definition. To get a
-        representation of the relationship, call `build_relationhsip_object()`.
-        To access related data, call `get_related_object()`
-        """
-        if relname is None:
-            assert self.relname_url_kwarg in self.kwargs, (
-                'Expected view %s to be called with a URL keyword argument '
-                'named "%s". Fix your URL conf, or set the '
-                '`.relname_url_kwarg` attribute on the view correctly.' %
-                (self.__class__.__name__, self.relname_url_kwarg)
-            )
-            relname = self.kwargs[self.relname_url_kwarg]
-
-        for rel in self.relationships:
-            if relname == rel.relname:
-                return rel
-
-        # TODO: should we raise a 404 or api error?
-        return None
 
     def get_relationship_links(self, rel, instance):
         return OrderedDict((
