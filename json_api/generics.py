@@ -305,3 +305,34 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             rel.viewset.check_object_permissions(self.request, related_object)
 
             return related_object
+
+    def link_related(self, rel, instance, related):
+        accessor_name = self.get_related_accessor_name(rel, instance)
+
+        if rel.info.to_many:
+            # check permissions first before assignment
+            for related_object in related:
+                rel.viewset.check_object_permissions(self.request, related_object)
+            getattr(instance, accessor_name).add(*related)
+
+        else:
+            rel.viewset.check_object_permissions(self.request, related)
+            setattr(instance, accessor_name, related)
+
+    def unlink_related(self, rel, instance, related):
+        accessor_name = self.get_related_accessor_name(rel, instance)
+
+        if rel.info.to_many:
+            # check permissions first before assignment
+            for related_object in related:
+                rel.viewset.check_object_permissions(self.request, related_object)
+            getattr(instance, accessor_name).remove(*related)
+
+        else:
+            rel.viewset.check_object_permissions(self.request, related)
+            setattr(instance, accessor_name, None)
+
+    def set_related(self, rel, instance, related):
+        current = self.get_related_data(rel, instance)
+        self.unlink_related(rel, instance, current)
+        self.link_related(rel, instance, related)
