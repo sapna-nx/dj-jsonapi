@@ -16,6 +16,10 @@ class rel(namedtuple('Relationship', ['attname', 'viewset', 'relname'])):
     *relname* The display name for the relationship. Defaults to attname if
               not provided.
 
+    Note:
+    The `attname` attribute does not correspond to a django field's `attname`,
+    per the description, however this name was chosen since it serves the same
+    purpose. Also, it's seven chars in length.
     """
     def __new__(cls, attname, viewset, relname=None):
 
