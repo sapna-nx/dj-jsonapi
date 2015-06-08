@@ -1,6 +1,8 @@
 
 from collections import OrderedDict
 from django.db.models.query import QuerySet
+from django.db.models import Value, CharField
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import GenericAPIView
 from rest_framework.utils import field_mapping
 
@@ -160,24 +162,27 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
     def get_relationship_linkage(self, rel, instance):
         # don't forget to paginate the queryset
-        related = self.get_related_object(rel, instance)
+        related = self.get_related_data(rel, instance)
 
         if related is None:
             return None
 
         if not isinstance(related, QuerySet):
+            # TODO: decide on whether we should use a serializer instead.
             return OrderedDict((
                 ('id', related.pk),
                 ('type', self.get_resource_type(related)),
             ))
 
+        resource_type = self.get_resource_type(related.model)
         serializer_class = self.get_identity_serializer(rel)
-        return serializer_class(related.only('pk'), many=True).data
+        related = related.only('pk').annotate(type=Value(resource_type, CharField()))
+        return serializer_class(related, many=True).data
 
     def get_relationship_meta(self, rel):
         pass
 
-    def build_relationhsip_object(self, rel, instance, include_linkage=False):
+    def build_relationship_object(self, rel, instance, include_linkage=False):
         """
         Builds a relationship object that represents to-one and to-many
         relationships between the primary resource and related resources.
@@ -240,36 +245,63 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         return OrderedDict([(
             rel.relname,
-            self.build_relationhsip_object(
+            self.build_relationship_object(
                 rel, instance, not rel.info.to_many
             )
         ) for rel in self.relationships])
 
-    def get_related_object(self, rel, instance):
+    def get_related_queryset(self, rel):
         """
-        Returns a related object or queryset for a given relationship.
+        Returns the queryset for the relationship descriptor.
+        """
+        return rel.viewset.get_queryset()
+
+    def get_related_accessor_name(self, rel, model):
+        """
+        Get the accessor name for the given relationship on the model.
+        """
+        field = model._meta.get_field(rel.attname)
+
+        # forward relationship
+        if hasattr(field, 'attname'):
+            return field.attname
+
+        # reverse relationship
+        else:
+            return field.get_accessor_name()
+
+    def get_related_data(self, rel, instance):
+        """
+        Returns the related data for a given relationship. Depending on if the
+        relationship is to-many, the returned data will either be a related
+        object instance or a queryset.
+
         You may want to override this if you need to provide non-standard
         queryset lookups.
         """
-        # Perform the lookup filtering.
-        queryset = rel.viewset.get_queryset()
-        field = instance._meta.get_field(rel.attname)
+        viewset_queryset = self.get_related_queryset(rel)
 
         if rel.info.to_many:
-            field_name = field.related.name
-            return queryset.filter(**{field_name: instance.pk})
+            accessor_name = self.get_related_accessor_name(rel, instance)
+            related_queryset = getattr(instance, accessor_name).all()
+            return related_queryset & viewset_queryset
 
         else:
-            field_name = field.field.name
+            accessor_name = self.get_related_accessor_name(rel, instance)
+            related_object = getattr(instance, accessor_name)
+
             # It is possible that the relationship doesn't exist. In that
             # case, it is valid to return None
-            try:
-                related = queryset.get(**{field_name: instance.pk})
-            except queryset.model.DoesNotExist:
-                related = None
+            if related_object is None:
+                return None
+
+            # check that the related object is in the viewset's queryset.
+            # raises a 403 if not the related object is not in the queryset.
+            # TODO: determine if this is the correct behavior
+            if not viewset_queryset.filter(pk=related_object.pk).exists():
+                raise PermissionDenied
 
             # May raise a permission denied
-            if related is not None:
-                rel.viewset.check_object_permissions(self.request, related)
+            rel.viewset.check_object_permissions(self.request, related_object)
 
-            return related
+            return related_object
