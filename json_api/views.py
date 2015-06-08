@@ -108,10 +108,6 @@ class ResourceView(APIView):
         """
         Returns the relationship for a given relationship name. If no name is
         specified, it attempts to get the relationship for the current request.
-
-        Note that this returns the relationship definition. To get a
-        representation of the relationship, call `build_relationhsip_object()`.
-        To access related data, call `get_related_objects()`
         """
         if relname is None:
             assert self.relname_url_kwarg in self.kwargs, (
