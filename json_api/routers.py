@@ -46,7 +46,7 @@ class BaseAPIRouter(routers.SimpleRouter):
         #         'patch': 'partial_update_related',
         #         'delete': 'destroy_related',
         #     },
-        #     name='{basename}-related',
+        #     name='{basename}-related-detail',
         #     initkwargs={'suffix': 'Related Data'},
         # ),
     ]

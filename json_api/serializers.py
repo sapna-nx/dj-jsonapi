@@ -22,7 +22,7 @@ class CheckedTypeField(serializers.Field):
         super(CheckedTypeField, self).__init__(**kwargs)
 
     def run_validation(self, data):
-        expected = self.to_representation()
+        expected = self.to_representation(data)
         if data != expected:
             raise exceptions.Conflict(
                 'Incorrect type. Expected \'{}\', but got \'{}\'.'.format(

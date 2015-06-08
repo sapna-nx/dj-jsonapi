@@ -13,6 +13,8 @@ class ResourceView(APIView):
     relationships = None
     relname_url_kwarg = 'relname'
 
+    allow_client_generated_ids = False
+
     def initial(self, *args, **kwargs):
         super(ResourceView, self).initial(*args, **kwargs)
 

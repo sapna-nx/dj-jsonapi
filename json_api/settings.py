@@ -1,5 +1,5 @@
 '''
-Settings for dj-jsonapi are all namespaced in the DJANGO_JSON_API setting. 
+Settings for dj-jsonapi are all namespaced in the DJANGO_JSON_API setting.
 
     Note:
     This module is an extension of REST framework's settings module and
@@ -46,7 +46,7 @@ DEFAULTS.update({
     'DEFAULT_PARSER_CLASSES': (
         'json_api.parsers.APIParser',
         'json_api.parsers.FormParser',
-        'json_api.parsers.MultiPartParser'
+        'json_api.parsers.MultiPartParser',
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'json_api.filters.RelatedOrderingFilter',
@@ -54,7 +54,9 @@ DEFAULTS.update({
     ),
     'ORDERING_PARAM': 'sort',
     'DEFAULT_PAGINATION_CLASS': 'json_api.pagination.PageNumberPagination',
-    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'json_api.negotiation.Negotiator',
+    # 'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'json_api.negotiation.Negotiator',
+    # 'DEFAULT_METADATA_CLASS': 'json_api.metadata.APIMetadata',
+    'FORM_OVERRIDE_DO_PARSE': True,
 })
 
 # JSON-API settings

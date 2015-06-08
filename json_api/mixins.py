@@ -1,6 +1,4 @@
 
-from __future__ import unicode_literals
-# from collections import OrderedDict
 from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
@@ -19,14 +17,18 @@ class CreateResourceMixin(object):
         if isinstance(data, list):
             raise NotImplementedError('Bulk extension is not currently supported.')
 
-        response_data = self.perform_create(data)
+        obj = self.perform_create(data)
+        data = self.build_resource(obj)
 
-        headers = self.get_success_headers(response_data)
+        headers = self.get_success_headers(data)
+        response_data = self.build_response_body(
+            data=data,
+        )
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
     @transaction.atomic
     def perform_create(self, data):
-        if 'id' in data:
+        if 'id' in data:  # and not self.allow_client_generated_ids:
             # Raise 403
             raise NotImplementedError('Client-Generated IDs are not currently supported.')
 
@@ -42,7 +44,7 @@ class CreateResourceMixin(object):
         for rel in data.get('relationships', {}):
             raise NotImplementedError('Resource linkage on creation not currently supported.')
 
-        return self.build_resource(obj)
+        return obj
 
     def get_success_headers(self, data):
         try:
@@ -66,7 +68,7 @@ class ListResourceMixin(object):
             data = [self.build_resource(instance) for instance in queryset]
 
         links = self.get_default_links()
-        links.update(self.get_list_action_links())
+        links.update(self.get_collection_actions())
 
         response_data = self.build_response_body(
             links=links,
@@ -81,8 +83,14 @@ class RetrieveResourceMixin(object):
     """
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
+        links = self.get_default_links()
         data = self.build_resource(instance)
-        return Response(data)
+
+        response_data = self.build_response_body(
+            links=links,
+            data=data,
+        )
+        return Response(response_data)
 
 
 class UpdateResourceMixin(object):
@@ -97,8 +105,14 @@ class UpdateResourceMixin(object):
         if isinstance(data, list):
             raise NotImplementedError('Bulk extension is not currently supported.')
 
-        response_data = self.perform_update(data, partial)
+        obj = self.perform_update(data, partial)
+        data = self.build_resource(obj)
+        links = self.get_default_links()
 
+        response_data = self.build_response_body(
+            links=links,
+            data=data,
+        )
         return Response(response_data)
 
     def partial_update(self, request, *args, **kwargs):
@@ -128,7 +142,7 @@ class UpdateResourceMixin(object):
         for rel in data.get('relationships', {}):
             raise NotImplementedError('Resource linkage on creation not currently supported.')
 
-        return self.build_resource(obj)
+        return obj
 
 
 class DestroyResourceMixin(object):
