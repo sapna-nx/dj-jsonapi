@@ -288,7 +288,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         else:
             accessor_name = self.get_related_accessor_name(rel, instance)
-            related_object = getattr(instance, accessor_name)
+            related_object = getattr(instance, accessor_name, None)
 
             # It is possible that the relationship doesn't exist. In that
             # case, it is valid to return None

@@ -54,7 +54,7 @@ class ResourceView(APIView):
         list_views = []
         for methodname in dir(self.__class__):
             attr = getattr(self.__class__, methodname)
-            kwargs = getattr(self.__class__, methodname).kwargs
+            kwargs = getattr(attr, 'kwargs', None)
             httpmethods = getattr(attr, 'bind_to_methods', None)
             detail = getattr(attr, 'detail', True)
             if httpmethods:
