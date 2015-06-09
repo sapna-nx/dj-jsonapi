@@ -333,6 +333,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             setattr(instance, accessor_name, None)
 
     def set_related(self, rel, instance, related):
-        current = self.get_related_data(rel, instance)
-        self.unlink_related(rel, instance, current)
+        if rel.info.to_many:
+            current = self.get_related_data(rel, instance)
+            self.unlink_related(rel, instance, current)
         self.link_related(rel, instance, related)

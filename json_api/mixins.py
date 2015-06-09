@@ -207,7 +207,7 @@ class ManageRelationshipMixin(object):
 
         else:
             related_pk = serializer.validated_data['id']
-            related = rel.info.related_model.objects.filter(pk=related_pk)
+            related = rel.info.related_model.objects.get(pk=related_pk)
             return self.set_related(rel, instance, related)
 
     def perform_relationship_delete(self, data):
