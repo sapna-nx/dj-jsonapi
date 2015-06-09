@@ -264,7 +264,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         # forward relationship
         if hasattr(field, 'attname'):
-            return field.attname
+            return field.name
 
         # reverse relationship
         else:
