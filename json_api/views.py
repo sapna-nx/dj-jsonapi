@@ -54,13 +54,15 @@ class ResourceView(APIView):
         list_views = []
         for methodname in dir(self.__class__):
             attr = getattr(self.__class__, methodname)
+            kwargs = getattr(self.__class__, methodname).kwargs
             httpmethods = getattr(attr, 'bind_to_methods', None)
             detail = getattr(attr, 'detail', True)
             if httpmethods:
+                url_path = kwargs.get('url_path', None) or methodname
                 if detail:
-                    detail_views.append(methodname.replace('_', '-'))
+                    detail_views.append(url_path.replace('_', '-'))
                 else:
-                    list_views.append(methodname.replace('_', '-'))
+                    list_views.append(url_path.replace('_', '-'))
 
         return detail_views, list_views
 
