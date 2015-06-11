@@ -188,38 +188,20 @@ class ManageRelationshipMixin(object):
     def perform_relationship_create(self, data):
         instance = self.get_object()
         rel = self.get_relationship()
+        related = self.get_related_from_data(rel, data)
 
-        serializer = self.get_identity_serializer(rel)(data=data, many=True)
-        serializer.is_valid(raise_exception=True)
-
-        related_pks = [related['id'] for related in serializer.validated_data]
-        related = rel.info.related_model.objects.filter(pk__in=related_pks)
         return self.link_related(rel, instance, related)
 
     def perform_relationship_update(self, data):
         instance = self.get_object()
         rel = self.get_relationship()
+        related = self.get_related_from_data(rel, data)
 
-        serializer = self.get_identity_serializer(rel)(data=data, many=rel.info.to_many)
-        serializer.is_valid(raise_exception=True)
-
-        if rel.info.to_many:
-            related_pks = [related['id'] for related in serializer.validated_data]
-            related = rel.info.related_model.objects.filter(pk__in=related_pks)
-            return self.set_related(rel, instance, related)
-
-        else:
-            related_pk = serializer.validated_data['id']
-            related = rel.info.related_model.objects.get(pk=related_pk)
-            return self.set_related(rel, instance, related)
+        return self.set_related(rel, instance, related)
 
     def perform_relationship_delete(self, data):
         instance = self.get_object()
         rel = self.get_relationship()
+        related = self.get_related_from_data(rel, data)
 
-        serializer = self.get_identity_serializer(rel)(data=data, many=True)
-        serializer.is_valid(raise_exception=True)
-
-        related_pks = [related['id'] for related in serializer.validated_data]
-        related = rel.info.related_model.objects.filter(pk__in=related_pks)
         return self.unlink_related(rel, instance, related)

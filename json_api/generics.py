@@ -306,6 +306,23 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
             return related_object
 
+    def get_related_from_data(self, rel, data):
+        """
+        Returns a model instance or queryset from a related viewset.
+        """
+        serializer = self.get_identity_serializer(rel)(data=data, many=rel.info.to_many)
+        serializer.is_valid(raise_exception=True)
+
+        if rel.info.to_many:
+            related_pks = [related['id'] for related in serializer.validated_data]
+            related = rel.info.related_model.objects.filter(pk__in=related_pks)
+
+        else:
+            related_pk = serializer.validated_data['id']
+            related = rel.info.related_model.objects.get(pk=related_pk)
+
+        return related
+
     def link_related(self, rel, instance, related):
         accessor_name = self.get_related_accessor_name(rel, instance)
 
