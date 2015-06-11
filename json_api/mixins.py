@@ -40,12 +40,29 @@ class CreateResourceMixin(object):
 
         serializer = self.get_serializer(data=data.get('attributes', {}))
         serializer.is_valid(raise_exception=True)
-        obj = serializer.save()
 
-        for rel in data.get('relationships', {}):
-            raise NotImplementedError('Resource linkage on creation not currently supported.')
+        # to-many relationships should be deferred since it implies m2m or a reverse FK.
+        relationships = dict()
+        deferred_relationships = dict()
+        for relname, reldata in data.get('relationships', {}).items():
+            rel = self.get_relationship(relname)
+            related = self.get_related_from_data(rel, data)
 
-        return obj
+            # check permissions and determine if deferred
+            if rel.info.to_many:
+                for related_object in related:
+                    rel.viewset.check_object_permissions(self.request, related_object)
+                deferred_relationships[rel] = related
+            else:
+                rel.viewset.check_object_permissions(self.request, related)
+                relationships[rel] = related
+
+        instance = serializer.save(**relationships)
+
+        for rel, related in deferred_relationships.items():
+            return self.link_related(rel, instance, related)
+
+        return instance
 
     def get_success_headers(self, data):
         try:
@@ -140,12 +157,26 @@ class UpdateResourceMixin(object):
             partial=partial
         )
         serializer.is_valid(raise_exception=True)
-        obj = serializer.save()
 
-        for rel in data.get('relationships', {}):
-            raise NotImplementedError('Resource linkage on creation not currently supported.')
+        relationships = dict()
+        for relname, reldata in data.get('relationships', {}).items():
+            rel = self.get_relationship(relname)
+            related = self.get_related_from_data(rel, data)
+            relationships[rel] = related
 
-        return obj
+            # check permissions
+            if rel.info.to_many:
+                for related_object in related:
+                    rel.viewset.check_object_permissions(self.request, related_object)
+            else:
+                rel.viewset.check_object_permissions(self.request, related)
+
+        instance = serializer.save()
+
+        for rel, related in relationships.items():
+            return self.set_related(rel, instance, related)
+
+        return instance
 
 
 class DestroyResourceMixin(object):
