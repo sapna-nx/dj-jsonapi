@@ -2,13 +2,13 @@
 from collections import OrderedDict
 from django.db.models.query import QuerySet
 from django.db.models import Value, CharField
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import GenericAPIView
 from rest_framework.utils import field_mapping
 
 from json_api.utils import model_meta
 from json_api.utils.reverse import reverse
 from json_api.utils.rels import resolved_rel
+from json_api.exceptions import PermissionDenied
 from json_api import serializers, views
 
 

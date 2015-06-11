@@ -2,6 +2,7 @@
 from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
+from json_api.exceptions import ParseError, PermissionDenied, Conflict
 
 
 class CreateResourceMixin(object):
@@ -9,7 +10,10 @@ class CreateResourceMixin(object):
     Create a resource instance.
     """
     def create(self, request, *args, **kwargs):
-        data = request.data['data']
+        try:
+            data = request.data['data']
+        except KeyError:
+            raise ParseError('Primary \'data\' key not found in request data.')
 
         # Until a solution for content negotiation of extensions has been
         # determined, don't handle bulk creation
@@ -29,13 +33,10 @@ class CreateResourceMixin(object):
     @transaction.atomic
     def perform_create(self, data):
         if 'id' in data:  # and not self.allow_client_generated_ids:
-            # Raise 403
-            raise NotImplementedError('Client-Generated IDs are not currently supported.')
+            raise PermissionDenied('Client-Generated IDs are not supported.')
 
         if data['type'] != self.get_resource_type():
-            # Raise 409 Conflict
-            # TODO: Make mo betta
-            raise Exception('409 Conflict - incorrect type')
+            raise Conflict('Resource type mismatch')
 
         serializer = self.get_serializer(data=data.get('attributes', {}))
         serializer.is_valid(raise_exception=True)
@@ -98,7 +99,11 @@ class UpdateResourceMixin(object):
     Update a model instance.
     """
     def update(self, request, *args, **kwargs):
-        data = request.data['data']
+        try:
+            data = request.data['data']
+        except KeyError:
+            raise ParseError('Primary \'data\' key not found in request data.')
+
         partial = kwargs.pop('partial', False)
 
         # TODO: raise `APIError`s
@@ -124,12 +129,10 @@ class UpdateResourceMixin(object):
         instance = self.get_object()
 
         if data['id'] != instance.pk:
-            raise Exception('409 Conflict - ID mismatch or something')
+            raise Conflict('Resource ID mismatch')
 
         if data['type'] != self.get_resource_type():
-            # Raise 409 Conflict
-            # TODO: Make mo betta
-            raise Exception('409 Conflict - incorrect type')
+            raise Conflict('Resource type mismatch')
 
         serializer = self.get_serializer(
             instance=instance,

@@ -56,6 +56,7 @@ DEFAULTS.update({
     'DEFAULT_PAGINATION_CLASS': 'json_api.pagination.PageNumberPagination',
     # 'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'json_api.negotiation.Negotiator',
     # 'DEFAULT_METADATA_CLASS': 'json_api.metadata.APIMetadata',
+    'EXCEPTION_HANDLER': 'json_api.exceptions.handler',
     'FORM_OVERRIDE_DO_PARSE': True,
 })
 

@@ -1,8 +1,8 @@
 
 from django.core.exceptions import ImproperlyConfigured
-from rest_framework.exceptions import ParseError
 from rest_framework.filters import OrderingFilter
 from rest_framework.utils import model_meta
+from json_api.exceptions import ParseError
 from json_api.settings import api_settings
 
 
