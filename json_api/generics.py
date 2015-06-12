@@ -284,7 +284,10 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         if rel.info.to_many:
             accessor_name = self.get_related_accessor_name(rel, instance)
             related_queryset = getattr(instance, accessor_name).all()
-            return related_queryset & viewset_queryset
+            # TODO:
+            # investigate why `related_queryset & viewset_queryset`
+            # produces duplicates
+            return viewset_queryset & related_queryset
 
         else:
             accessor_name = self.get_related_accessor_name(rel, instance)
