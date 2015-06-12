@@ -2,6 +2,7 @@
 import six
 from collections import OrderedDict
 from django.core.exceptions import ImproperlyConfigured
+from rest_framework.utils import model_meta
 from rest_framework import serializers
 
 from json_api import exceptions
@@ -101,4 +102,5 @@ class ResourceIdentifierSerializer(serializers.ModelSerializer):
 
     @property
     def _pk_field_name(self):
-        return self.Meta.model._meta.pk.name
+        meta = self.Meta.model._meta
+        return model_meta._get_pk(meta).name
