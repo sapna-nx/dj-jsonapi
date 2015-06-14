@@ -60,4 +60,7 @@ class PageNumberPagination(pagination.PageNumberPagination, PageLinksMixin):
     def get_last_link(self):
         url = self.request.build_absolute_uri()
         page_number = self.paginator.num_pages
-        return replace_query_param(url, self.page_query_param, page_number)
+
+        # only add a 'last' link if it isn't going to be the same as the 'first' link.
+        if page_number != 1:
+            return replace_query_param(url, self.page_query_param, page_number)
