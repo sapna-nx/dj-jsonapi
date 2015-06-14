@@ -25,30 +25,31 @@ class BaseAPIRouter(routers.SimpleRouter):
             name='{basename}-relationship',
             initkwargs={'suffix': 'Relationship'},
         ),
-        # TODO: add related route views
-        # routers.Route(
-        #     url=r'^{prefix}/{lookup}/{relname}{trailing_slash}$',
-        #     mapping={
-        #         'get': 'retrieve_or_list_related',
-        #         'post': 'create_related',
-        #         'put': 'update_related',
-        #         'patch': 'partial_update_related',
-        #         'delete': 'destroy_related',
-        #     },
-        #     name='{basename}-related',
-        #     initkwargs={'suffix': 'Related Data'},
-        # ),
-        # routers.Route(
-        #     url=r'^{prefix}/{lookup}/{relname}/{related_lookup}{trailing_slash}$',
-        #     mapping={
-        #         'get': 'retrieve_related',
-        #         'put': 'update_related',
-        #         'patch': 'partial_update_related',
-        #         'delete': 'destroy_related',
-        #     },
-        #     name='{basename}-related-detail',
-        #     initkwargs={'suffix': 'Related Data'},
-        # ),
+
+        # The complexity here is that the relationship could either be to-one or to-many.
+        # The view will have to determine whether an HTTP method is approriate, depending
+        # on the type of relationship.
+        routers.Route(
+            url=r'^{prefix}/{lookup}/{relname}{trailing_slash}$',
+            mapping={
+                'get': 'list_or_retrieve_related',
+                'post': 'maybe_create_related',
+                'patch': 'set_or_update_related',
+                'delete': 'destroy_related',
+            },
+            name='{basename}-related',
+            initkwargs={'suffix': 'Related Data'},
+        ),
+        routers.Route(
+            url=r'^{prefix}/{lookup}/{relname}/{related_lookup}{trailing_slash}$',
+            mapping={
+                'get': 'retrieve_related',
+                'patch': 'update_related',
+                'delete': 'destroy_related',
+            },
+            name='{basename}-related-detail',
+            initkwargs={'suffix': 'Related Data'},
+        ),
     ]
 
     def get_related_regex(self, viewset):

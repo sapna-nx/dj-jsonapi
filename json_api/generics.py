@@ -157,7 +157,11 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
                 self.request,
                 args=[instance.pk, rel.relname]
             )),
-            # ('related', self.request.build_absolute_uri(relname)),
+            ('related', reverse(
+                '%s-related' % self.get_basename(),
+                self.request,
+                args=[instance.pk, rel.relname]
+            )),
         ))
 
     def get_relationship_linkage(self, rel, instance):
@@ -285,8 +289,8 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             accessor_name = self.get_related_accessor_name(rel, instance)
             related_queryset = getattr(instance, accessor_name).all()
             # TODO:
-            # investigate why `related_queryset & viewset_queryset`
-            # produces duplicates
+            # investigate why `related_queryset & viewset_queryset` produces
+            # duplicates. This seems to be related to the annotation.
             return viewset_queryset & related_queryset
 
         else:

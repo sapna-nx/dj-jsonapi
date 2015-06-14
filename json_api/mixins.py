@@ -1,8 +1,23 @@
 
+from functools import wraps
 from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
 from json_api.exceptions import ParseError, PermissionDenied, Conflict, MethodNotAllowed
+
+
+def patch_related_viewset(view_class, related_queryset):
+    # Notes:
+    # This can't be done by overriding `get_queryset()`, since it is intended to be
+    # overridden by child classes.
+
+    view_class.__orig_get_queryset = view_class.get_queryset
+
+    @wraps(view_class.get_queryset)
+    def get_related_queryset(self):
+        return self.__orig_get_queryset() & related_queryset
+
+    view_class.get_queryset = get_related_queryset
 
 
 class CreateResourceMixin(object):
@@ -244,3 +259,49 @@ class ManageRelationshipMixin(object):
         related = self.get_related_from_data(rel, data)
 
         return self.unlink_related(rel, instance, related)
+
+
+class RetrieveRelatedResourceMixin(object):
+    def list_or_retrieve_related(self, request, pk, relname, *args, **kwargs):
+        instance = self.get_object()
+        rel = self.get_relationship()
+
+        # Handle to-one relationships. In the case where the related object does not
+        # exist, we need return a 'null' response instead of a 404.
+        if not rel.info.to_many:
+
+            # we need to use field.attname in order to get just the pk, instead of the
+            # full related instance.
+            field = instance._meta.get_field(rel.attname)
+            related_pk = getattr(instance, field.attname, None)
+
+            if related_pk is None:
+                response_data = self.build_response_body(
+                    links=self.get_default_links(),
+                    data=None,
+                )
+                return Response(response_data)
+
+            else:
+                view = rel.viewset.__class__.as_view({'get': 'retrieve'})
+                return view(request, pk=related_pk, *args, **kwargs)
+
+        # Handle to-many relationships. In this case, we need to monkey patch the
+        # existing `get_queryset()` so that it's filtered by the related quertyset.
+        else:
+            accessor_name = self.get_related_accessor_name(rel, instance)
+            related_queryset = getattr(instance, accessor_name).all()
+
+            view = rel.viewset.__class__.as_view({'get': 'list'})
+            patch_related_viewset(view.cls, related_queryset)
+
+            return view(request)
+
+    def retrieve_related(self, request, pk, relname, related_pk, *args, **kwargs):
+        rel = self.get_relationship()
+        view = rel.viewset.__class__.as_view({'get': 'retrieve'})
+        return view(request, pk=related_pk, *args, **kwargs)
+
+
+class ManageRelatedResourceMixin(object):
+    pass
