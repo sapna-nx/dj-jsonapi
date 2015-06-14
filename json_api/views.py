@@ -2,7 +2,7 @@
 from collections import OrderedDict
 from rest_framework.views import APIView
 from json_api.utils.reverse import reverse
-from json_api import routers
+from json_api import routers, exceptions
 
 
 class ResourceView(APIView):
@@ -126,5 +126,6 @@ class ResourceView(APIView):
             if relname == rel.relname:
                 return rel
 
-        # TODO: should we raise a 404 or api error?
-        return None
+        # raise 404 if no relationship was found. This also covers calls on
+        # '/relationships/'
+        raise exceptions.NotFound()
