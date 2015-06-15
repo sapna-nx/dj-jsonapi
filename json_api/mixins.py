@@ -1,23 +1,8 @@
 
-from functools import wraps
 from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
 from json_api.exceptions import ParseError, PermissionDenied, Conflict, MethodNotAllowed
-
-
-def patch_related_viewset(view_class, related_queryset):
-    # Notes:
-    # This can't be done by overriding `get_queryset()`, since it is intended to be
-    # overridden by child classes.
-
-    view_class.__orig_get_queryset = view_class.get_queryset
-
-    @wraps(view_class.get_queryset)
-    def get_related_queryset(self):
-        return self.__orig_get_queryset() & related_queryset
-
-    view_class.get_queryset = get_related_queryset
 
 
 class CreateResourceMixin(object):
@@ -292,8 +277,8 @@ class RetrieveRelatedResourceMixin(object):
             accessor_name = self.get_related_accessor_name(rel, instance)
             related_queryset = getattr(instance, accessor_name).all()
 
-            view = rel.viewset.__class__.as_view({'get': 'list'})
-            patch_related_viewset(view.cls, related_queryset)
+            view_class = self.related_viewset(rel.viewset.__class__, related_queryset)
+            view = view_class.as_view({'get': 'list'})
 
             return view(request)
 
@@ -302,6 +287,18 @@ class RetrieveRelatedResourceMixin(object):
         view = rel.viewset.__class__.as_view({'get': 'retrieve'})
         return view(request, pk=related_pk, *args, **kwargs)
 
+    def related_viewset(self, view_class, related_queryset):
+
+        class RelatedViewSet(view_class):
+            def get_queryset(self):
+                return super(RelatedViewSet, self).get_queryset() & related_queryset
+
+        return RelatedViewSet
+
 
 class ManageRelatedResourceMixin(object):
+    # POST's can be handled by updating the relationship data to include a pointer to the
+    # parent. Then, just call the regular `create()` method.
+    # `PATCH`ing shouldn't need to care about relationships.
+    # `DELETE`ing shouldn't need to care about relationships either.
     pass
