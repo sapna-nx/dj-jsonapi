@@ -32,10 +32,10 @@ class BaseAPIRouter(routers.SimpleRouter):
         routers.Route(
             url=r'^{prefix}/{lookup}/{relname}{trailing_slash}$',
             mapping={
-                'get': 'list_or_retrieve_related',
-                'post': 'maybe_create_related',
-                'patch': 'set_or_update_related',
-                'delete': 'destroy_related',
+                'get': 'list_or_retrieve_related',  # Acceptable on to-many and to-one
+                'post': 'maybe_create_related',     # Acceptable on to-many
+                'patch': 'maybe_update_related',    # Acceptable on to-one
+                'delete': 'maybe_destroy_related',  # Acceptable on to-one
             },
             name='{basename}-related',
             initkwargs={'suffix': 'Related Data'},
