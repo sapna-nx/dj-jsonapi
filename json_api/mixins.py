@@ -258,7 +258,12 @@ class RetrieveRelatedResourceMixin(object):
             # we need to use field.attname in order to get just the pk, instead of the
             # full related instance.
             field = instance._meta.get_field(rel.attname)
-            related_pk = getattr(instance, field.attname, None)
+            related_pk = None
+            if hasattr(field, "attname"):
+                related_pk = getattr(instance, field.attname, None)
+            else:
+                accessor_name = self.get_related_accessor_name(rel, instance)
+                related_pk = getattr(instance, accessor_name).pk
 
             if related_pk is None:
                 response_data = self.build_response_body(
@@ -274,8 +279,13 @@ class RetrieveRelatedResourceMixin(object):
         # Handle to-many relationships. In this case, we need to monkey patch the
         # existing `get_queryset()` so that it's filtered by the related quertyset.
         else:
-            accessor_name = self.get_related_accessor_name(rel, instance)
-            related_queryset = getattr(instance, accessor_name).all()
+            field = instance._meta.get_field(rel.attname)
+            related_queryset = None
+            if hasattr(field, "attname"):
+                related_queryset = getattr(instance, field.attname, None).all()
+            else:
+                accessor_name = self.get_related_accessor_name(rel, instance)
+                related_queryset = getattr(instance, accessor_name).all()
 
             view_class = self.related_viewset(rel.viewset.__class__, related_queryset)
             view = view_class.as_view({'get': 'list'})
