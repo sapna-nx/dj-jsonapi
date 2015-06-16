@@ -217,7 +217,7 @@ class ManageRelationshipMixin(object):
 
     def delete_relationship(self, request, pk, relname, *args, **kwargs):
         data = request.data['data']
-        rel = self.get_relationship()
+        rel = self.get_relationship(relname)
         if not rel.info.to_many:
             raise MethodNotAllowed()
 
@@ -249,7 +249,7 @@ class ManageRelationshipMixin(object):
 class RetrieveRelatedResourceMixin(object):
     def list_or_retrieve_related(self, request, pk, relname, *args, **kwargs):
         instance = self.get_object()
-        rel = self.get_relationship()
+        rel = self.get_relationship(relname)
 
         # Handle to-one relationships. In the case where the related object does not
         # exist, we need return a 'null' response instead of a 404.
@@ -283,7 +283,7 @@ class RetrieveRelatedResourceMixin(object):
             return view(request)
 
     def retrieve_related(self, request, pk, relname, related_pk, *args, **kwargs):
-        rel = self.get_relationship()
+        rel = self.get_relationship(relname)
         view = rel.viewset.__class__.as_view({'get': 'retrieve'})
         return view(request, pk=related_pk, *args, **kwargs)
 
