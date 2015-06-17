@@ -3,7 +3,6 @@ from collections import OrderedDict
 from django.db.models.query import QuerySet
 from django.db.models import Value, CharField
 from rest_framework.generics import GenericAPIView
-from rest_framework.utils import field_mapping
 
 from json_api.utils import model_meta
 from json_api.utils.reverse import reverse
@@ -96,7 +95,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         Additionally, it includes any detail routes attached to the viewset.
         """
-        view_name = field_mapping.get_detail_view_name(instance)
+        view_name = "%s-detail" % self.get_basename()
         links = OrderedDict((
             ('self', reverse(view_name, self.request, args=(instance.pk, ))),
         ))
