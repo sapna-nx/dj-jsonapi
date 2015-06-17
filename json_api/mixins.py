@@ -35,6 +35,8 @@ class CreateResourceMixin(object):
         if 'id' in data:  # and not self.allow_client_generated_ids:
             raise PermissionDenied('Client-Generated IDs are not supported.')
 
+        if 'type' not in data:
+            raise ParseError('Resource type not specified')
         if data['type'] != self.get_resource_type():
             raise Conflict('Resource type mismatch')
 
@@ -145,9 +147,13 @@ class UpdateResourceMixin(object):
     def perform_update(self, data, partial=False):
         instance = self.get_object()
 
+        if 'id' not in data:
+            raise ParseError('Resource ID not specified')
         if data['id'] != instance.pk:
             raise Conflict('Resource ID mismatch')
 
+        if 'type' not in data:
+            raise ParseError('Resource type not specified')
         if data['type'] != self.get_resource_type():
             raise Conflict('Resource type mismatch')
 
