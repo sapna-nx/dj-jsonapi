@@ -104,3 +104,16 @@ class ResourceIdentifierSerializer(serializers.ModelSerializer):
     def _pk_field_name(self):
         meta = self.Meta.model._meta
         return model_meta._get_pk(meta).name
+
+
+class PolymorphicResourceSerializer(ResourceSerializer):
+
+    def __new__(cls, *args, **kwargs):
+        instance = kwargs.get('instance', None)
+
+        # get the serializer subclass for an instance, or default to base class
+        serializer_class = cls
+        if hasattr(instance, '_meta') and hasattr(cls.Meta, 'subclasses'):
+            serializer_class = cls.Meta.subclasses.get(instance._meta.model, cls)
+
+        return super(PolymorphicResourceSerializer, cls).__new__(serializer_class, *args, **kwargs)
