@@ -106,7 +106,7 @@ class ResourceIdentifierSerializer(serializers.ModelSerializer):
         return model_meta._get_pk(meta).name
 
 
-class PolymorphicResourceSerializer(ResourceSerializer):
+class PolymorphicModelSerializer(serializers.ModelSerializer):
 
     def __new__(cls, *args, **kwargs):
         instance = kwargs.get('instance', None)
@@ -117,3 +117,11 @@ class PolymorphicResourceSerializer(ResourceSerializer):
             serializer_class = cls.Meta.subclasses.get(instance._meta.model, cls)
 
         return super(PolymorphicResourceSerializer, cls).__new__(serializer_class, *args, **kwargs)
+
+
+class PolymorphicResourceSerializer(PolymorphicModelSerializer, ResourceSerializer):
+    pass
+
+
+class PolymorphicResourceIdentifierSerializer(PolymorphicModelSerializer, ResourceIdentifierSerializer):
+    pass
