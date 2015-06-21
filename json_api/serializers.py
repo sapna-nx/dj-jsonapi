@@ -116,7 +116,7 @@ class PolymorphicModelSerializer(serializers.ModelSerializer):
         if hasattr(instance, '_meta') and hasattr(cls.Meta, 'subclasses'):
             serializer_class = cls.Meta.subclasses.get(instance._meta.model, cls)
 
-        return super(PolymorphicResourceSerializer, cls).__new__(serializer_class, *args, **kwargs)
+        return super(PolymorphicModelSerializer, cls).__new__(serializer_class, *args, **kwargs)
 
 
 class PolymorphicResourceSerializer(PolymorphicModelSerializer, ResourceSerializer):
