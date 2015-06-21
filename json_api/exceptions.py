@@ -18,23 +18,34 @@ def handler(exc, context):
         exc = PermissionDenied()
 
     response = _exception_handler(exc, context)
-    # response.data = reformat_data(response.data)
 
-    if isinstance(exc, APIError):
-        response.data = {'errors': [exc.data]}
-
-    elif isinstance(exc, exceptions.APIException):
+    if response is not None:
         response.data = {'errors': format_error_data(exc)}
 
     return response
 
 
 def format_error_data(exc):
-    if isinstance(exc, exceptions.ValidationError):
-        return [error.data for error in expand_validation_error(exc, exc.detail)]
+    """
+    Returns a list of JSON-API error objects from a given exception.
+    """
+    errors = []
 
-    else:
-        return [APIError(status=exc.status_code, detail=exc.detail).data]
+    if isinstance(exc, APIError):
+        errors.append(exc.data)
+
+    elif isinstance(exc, ErrorList):
+        for error in exc.errors:
+            errors += format_error_data(error)
+
+    elif isinstance(exc, exceptions.APIException):
+        if isinstance(exc, exceptions.ValidationError):
+            errors += [error.data for error in expand_validation_error(exc, exc.detail)]
+
+        else:
+            errors.append(APIError(status=exc.status_code, detail=exc.detail).data)
+
+    return errors
 
 
 def expand_validation_error(base_exc, detail, pointer='/data'):
@@ -157,14 +168,14 @@ class Throttled(APIError, exceptions.Throttled):
     pass
 
 
-# class ErrorList(exceptions.APIException):
-#     status_code = status.HTTP_400_BAD_REQUEST
+class ErrorList(exceptions.APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
 
-#     def __init__(self, errors):
+    def __init__(self, errors):
 
-#         if errors:
-#             status_codes = [error.status_code for error in errors]
-#             self.status_code = max(status_codes) // 100 * 100
+        if errors:
+            status_codes = [error.status_code for error in errors]
+            self.status_code = max(status_codes) // 100 * 100
 
-#         self.errors = errors
-#         self.detail = None
+        self.errors = errors
+        self.detail = None
