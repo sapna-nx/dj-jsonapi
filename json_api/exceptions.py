@@ -36,39 +36,27 @@ class APIError(exceptions.APIException):
     """
 
     def __init__(self, *args, **kwargs):
-        err_id = kwargs.pop('id', None)
-        links = kwargs.pop('links', None)
-        status = kwargs.pop('status', None)
-        code = kwargs.pop('code', None)
-        title = kwargs.pop('title', None)
-        source = kwargs.pop('source', None)
-        meta = kwargs.pop('meta', None)
+
+        error = OrderedDict([
+            ('id',      kwargs.pop('id', None)),
+            ('links',   kwargs.pop('links', None)),
+            ('status',  kwargs.pop('status', None) or self.status_code),
+            ('code',    kwargs.pop('code', None)),
+            ('title',   kwargs.pop('title', None)),
+            ('detail',  None),
+            ('source',  kwargs.pop('source', None)),
+            ('meta',    kwargs.pop('meta', None)),
+        ])
 
         super(APIError, self).__init__(*args, **kwargs)
 
-        detail = self.detail
-        status = status or self.status_code
+        error['detail'] = self.detail
 
-        error = OrderedDict()
-        if err_id is not None:
-            error['id'] = err_id
-        if links is not None:
-            error['links'] = links
-        if status is not None:
-            error['status'] = status
-        if code is not None:
-            error['code'] = code
-        if title is not None:
-            error['title'] = title
-        if detail is not None:
-            error['detail'] = detail
-        if source is not None:
-            error['source'] = source
-        if meta is not None:
-            error['meta'] = meta
+        for key, value in error.items():
+            if value is None:
+                del error[key]
 
-        self.detail = error
-
+        self.data = error
 
 
 class ValidationError(APIError, exceptions.ValidationError):
