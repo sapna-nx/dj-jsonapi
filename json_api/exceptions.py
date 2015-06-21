@@ -1,5 +1,5 @@
 
-import sys
+import six
 from collections import OrderedDict
 from rest_framework import exceptions
 from rest_framework.views import exception_handler as _exception_handler
@@ -10,21 +10,58 @@ from django.utils.encoding import force_text
 
 
 def handler(exc, context):
+
     if isinstance(exc, Http404):
         exc = NotFound()
+
     elif isinstance(exc, DjPermissionDenied):
         exc = PermissionDenied()
 
-    if not isinstance(exc, APIError) and isinstance(exc, exceptions.APIException):
-        module = sys.modules[__name__]
-        name = exc.__class__.__name__
+    response = _exception_handler(exc, context)
+    # response.data = reformat_data(response.data)
 
-        try:
-            exc = getattr(module, name)()
-        except:
-            pass
+    if isinstance(exc, APIError):
+        response.data = {'errors': [exc.data]}
 
-    return _exception_handler(exc, context)
+    elif isinstance(exc, exceptions.APIException):
+        response.data = {'errors': format_error_data(exc)}
+
+    return response
+
+
+def format_error_data(exc):
+    if isinstance(exc, exceptions.ValidationError):
+        return [error.data for error in expand_validation_error(exc, exc.detail)]
+
+    else:
+        return [APIError(status=exc.status_code, detail=exc.detail).data]
+
+
+def expand_validation_error(base_exc, detail, pointer='/data/attributes'):
+    errors = []
+
+    if isinstance(detail, list):
+        for index, sub_detail in enumerate(detail):
+
+            # base case is a list of validation error strings for a field pointer
+            if isinstance(sub_detail, six.string_types):
+                errors.append(ValidationError(
+                    detail=sub_detail,
+                    source={'pointer': pointer}
+                ))
+
+            # list of nested error arrays or objects
+            else:
+                errors += expand_validation_error(base_exc, sub_detail, "%s/%s" % (pointer, index))
+
+    elif isinstance(detail, dict):
+        for key, sub_detail in detail.items():
+            errors += expand_validation_error(base_exc, sub_detail, "%s/%s" % (pointer, key))
+
+    else:
+        raise Exception("dis is dun broke.")
+
+    return errors
 
 
 class APIError(exceptions.APIException):
