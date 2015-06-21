@@ -37,7 +37,7 @@ def format_error_data(exc):
         return [APIError(status=exc.status_code, detail=exc.detail).data]
 
 
-def expand_validation_error(base_exc, detail, pointer='/data/attributes'):
+def expand_validation_error(base_exc, detail, pointer='/data'):
     errors = []
 
     if isinstance(detail, list):
@@ -56,9 +56,19 @@ def expand_validation_error(base_exc, detail, pointer='/data/attributes'):
 
     elif isinstance(detail, dict):
         for key, sub_detail in detail.items():
-            errors += expand_validation_error(base_exc, sub_detail, "%s/%s" % (pointer, key))
+            if key == 'non_field_errors':
+                # non attribute errors belong to the overall 'data'.
+                errors += expand_validation_error(base_exc, sub_detail, pointer)
+
+            # TODO: determine if there is a more elegant way to handle identity vs attributes
+            elif key in ('id', 'type'):
+                errors += expand_validation_error(base_exc, sub_detail, "%s/%s" % (pointer, key))
+
+            else:
+                errors += expand_validation_error(base_exc, sub_detail, "%s/attributes/%s" % (pointer, key))
 
     else:
+        # TODO: Delete me after testing
         raise Exception("dis is dun broke.")
 
     return errors
