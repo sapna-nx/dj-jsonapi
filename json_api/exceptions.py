@@ -141,3 +141,16 @@ class UnsupportedMediaType(APIError, exceptions.UnsupportedMediaType):
 
 class Throttled(APIError, exceptions.Throttled):
     pass
+
+
+# class ErrorList(exceptions.APIException):
+#     status_code = status.HTTP_400_BAD_REQUEST
+
+#     def __init__(self, errors):
+
+#         if errors:
+#             status_codes = [error.status_code for error in errors]
+#             self.status_code = max(status_codes) // 100 * 100
+
+#         self.errors = errors
+#         self.detail = None
