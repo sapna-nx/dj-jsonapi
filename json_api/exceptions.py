@@ -106,6 +106,13 @@ class APIError(exceptions.APIException):
         self.data = error
 
 
+class _Conflict(exceptions.APIException):
+    status_code = status.HTTP_409_CONFLICT
+
+    def __init__(self, detail):
+        self.detail = force_text(detail)
+
+
 class ValidationError(APIError, exceptions.ValidationError):
     pass
 
@@ -138,11 +145,8 @@ class NotAcceptable(APIError, exceptions.NotAcceptable):
     pass
 
 
-class Conflict(APIError):
-    status_code = status.HTTP_409_CONFLICT
-
-    def __init__(self, detail):
-        self.detail = force_text(detail)
+class Conflict(APIError, _Conflict):
+    pass
 
 
 class UnsupportedMediaType(APIError, exceptions.UnsupportedMediaType):
