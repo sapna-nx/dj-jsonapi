@@ -1,10 +1,12 @@
 
+import inspect
+import six
 from collections import OrderedDict
 from django.db.models.query import QuerySet
 from django.db.models import Value, CharField
 from rest_framework.generics import GenericAPIView
 
-from json_api.utils import model_meta
+from json_api.utils import model_meta, import_class
 from json_api.utils.reverse import reverse
 from json_api.utils.rels import resolved_rel
 from json_api.exceptions import PermissionDenied
@@ -372,3 +374,50 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             current = self.get_related_data(rel, instance)
             self.unlink_related(rel, instance, current)
         self.link_related(rel, instance, related)
+
+
+class GenericPolymorphicResourceView(GenericResourceView):
+    subtypes = None
+
+    def build_resource(self, instance):
+        """
+        Returns a resource object for a model instance, in conformance with:
+        http://jsonapi.org/format/#document-structure-resource-objects
+        """
+        data = super(GenericPolymorphicResourceView, self).build_resource(instance)
+
+        data['links']['parent'] = data['links']['self']
+
+        viewset = self.get_subtype_viewset(data['type'])
+        if not viewset:
+            return data
+
+        relationships = viewset.get_relationship_objects(instance)
+        links = viewset.get_resource_links(instance)
+        meta = viewset.get_resource_meta(instance)
+
+        if relationships:
+            data.setdefault('relationships', {}).update(relationships)
+        if links:
+            data.setdefault('links', {}).update(links)
+        if meta:
+            data.setdefault('meta', {}).update(meta)
+
+        return data
+
+    def get_subtype_viewset(self, subtype):
+        if subtype not in self.subtypes:
+            return None
+
+        viewset = self.subtypes[subtype]
+
+        if isinstance(viewset, six.string_types):
+            viewset = import_class(viewset)
+
+        if inspect.isclass(viewset):
+            viewset = viewset()
+
+        viewset.request = self.request
+        viewset.relationships = viewset.resolve_relationships(viewset.relationships)
+
+        return viewset
