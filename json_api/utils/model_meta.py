@@ -49,3 +49,12 @@ def _translate_reverse_relationships(opts, reverse_relations):
     return OrderedDict([(
         relation.name, reverse_relations.pop(relation.get_accessor_name())
     ) for relation in related_objects])
+
+
+def verbose_name(model):
+    opts = model._meta
+
+    if model._deferred:
+        return verbose_name(opts.proxy_for_model)
+
+    return opts.verbose_name

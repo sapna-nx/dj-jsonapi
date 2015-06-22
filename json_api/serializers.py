@@ -4,8 +4,7 @@ from collections import OrderedDict
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.utils import model_meta
 from rest_framework import serializers
-
-from json_api import exceptions
+from json_api.utils.model_meta import verbose_name
 
 
 class CheckedTypeField(serializers.Field):
@@ -13,35 +12,44 @@ class CheckedTypeField(serializers.Field):
     # - `source` needs to be set to '*', since there is no 'type' field on the
     #   model. 'type' is pulled from the model's meta. This is relevant to
     #   serialization of model instances.
-    # - `source_attrs` needs to be abused and set to 'type' after binding,
-    #   otherwise the serializer cannot save the type parameter. Even though
-    #   there is no 'type' field, this okay as the idenity serializer should
-    #   not be saved, only validated. ie, the serializer will never attempt
-    #   to construct an actual instance of the model.
     def __init__(self, **kwargs):
         kwargs['source'] = '*'
         super(CheckedTypeField, self).__init__(**kwargs)
 
     def run_validation(self, data):
-        expected = self.to_representation(data)
+        self.validate_type(data)
+        return super(CheckedTypeField, self).run_validation(data)
+
+    def validate_type(self, data):
+        expected = self.parent.Meta.model._meta.verbose_name
         if data != expected:
-            raise exceptions.Conflict(
+            raise serializers.ValidationError(
                 'Incorrect type. Expected \'{}\', but got \'{}\'.'.format(
                     expected, data,
                 )
             )
-        return super(CheckedTypeField, self).run_validation(data)
-
-    def bind(self, field_name, parent):
-        ret = super(CheckedTypeField, self).bind(field_name, parent)
-        self.source_attrs = ['type']
-        return ret
 
     def to_internal_value(self, data):
-        return six.text_type(data)
+        return {'type': six.text_type(data)}
 
     def to_representation(self, value):
-        return self.parent.Meta.model._meta.verbose_name
+        return verbose_name(value)
+
+
+class PolymorphicCheckedTypeField(CheckedTypeField):
+    # This field verifies that a type is within the overall possible set of types, but
+    # it does not verify that the corresponding instance is a member of the given type.
+
+    def validate_type(self, data):
+        models = [self.parent.Meta.model] + list(self.parent.Meta.subclasses)
+
+        expected = [verbose_name(model) for model in models]
+        if data not in expected:
+            raise serializers.ValidationError(
+                'Incorrect type. Expected any in \'{}\', but got \'{}\'.'.format(
+                    expected, data,
+                )
+            )
 
 
 class ResourceSerializer(serializers.ModelSerializer):
@@ -124,4 +132,10 @@ class PolymorphicResourceSerializer(PolymorphicModelSerializer, ResourceSerializ
 
 
 class PolymorphicResourceIdentifierSerializer(PolymorphicModelSerializer, ResourceIdentifierSerializer):
-    pass
+
+    def get_fields(self):
+        fields = super(ResourceIdentifierSerializer, self).get_fields()
+        return OrderedDict((
+            ('id', fields[self._pk_field_name]),
+            ('type', PolymorphicCheckedTypeField()),
+        ))

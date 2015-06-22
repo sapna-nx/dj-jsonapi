@@ -51,9 +51,15 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         Returns a serializer for a relationship that is suitable for
         representing its resource identifiers.
         """
-        class ResourceRelationshipIdentifier(serializers.ResourceIdentifierSerializer):
-            class Meta:
-                model = rel.viewset.get_serializer_class().Meta.model
+        serializer_class = rel.viewset.get_serializer_class()
+        identifier_class = {
+            True: serializers.PolymorphicResourceIdentifierSerializer,
+            False: serializers.ResourceIdentifierSerializer,
+        }[issubclass(serializer_class, serializers.PolymorphicResourceSerializer)]
+
+        class ResourceRelationshipIdentifier(identifier_class):
+            class Meta(serializer_class.Meta):
+                pass
 
         return ResourceRelationshipIdentifier
 
@@ -316,6 +322,12 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         """
         Returns a model instance or queryset from a related viewset.
         """
+        # TODO: validate polymorphic types and raise ValidationErrors where appropriate.
+        # ie, If a parent type A has polymorphic subtypes B and C, then an instance of
+        # type B can correctly be referred to as types A and B, but not C. The serializer
+        # only has enough context to determine if the type is within the overall valid
+        # set of {A, B, C}, but not whether it is consistent with its corresponding
+        # instances' types.
         serializer = self.get_identity_serializer(rel)(data=data, many=rel.info.to_many)
         serializer.is_valid(raise_exception=True)
 
