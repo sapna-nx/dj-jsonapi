@@ -125,19 +125,14 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             ('type', self.get_resource_type(instance)),
         ))
 
-        attributes = serializer.data
-        relationships = self.get_relationship_objects(instance)
-        links = self.get_resource_links(instance)
-        meta = self.get_resource_meta(instance)
+        data['attributes'] = serializer.data
+        data['relationships'] = self.get_relationship_objects(instance)
+        data['links'] = self.get_resource_links(instance)
+        data['meta'] = self.get_resource_meta(instance)
 
-        if attributes:
-            data['attributes'] = attributes
-        if relationships:
-            data['relationships'] = relationships
-        if links:
-            data['links'] = links
-        if meta:
-            data['meta'] = meta
+        for key, value in data.items():
+            if not value:
+                del data[key]
 
         return data
 
@@ -379,6 +374,8 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 class GenericPolymorphicResourceView(GenericResourceView):
     subtypes = None
 
+    # todo: allow inclusion/selection of subtypes
+
     def build_resource(self, instance):
         """
         Returns a resource object for a model instance, in conformance with:
@@ -386,22 +383,11 @@ class GenericPolymorphicResourceView(GenericResourceView):
         """
         data = super(GenericPolymorphicResourceView, self).build_resource(instance)
 
-        data['links']['parent'] = data['links']['self']
-
         viewset = self.get_subtype_viewset(data['type'])
         if not viewset:
             return data
 
-        relationships = viewset.get_relationship_objects(instance)
-        links = viewset.get_resource_links(instance)
-        meta = viewset.get_resource_meta(instance)
-
-        if relationships:
-            data.setdefault('relationships', {}).update(relationships)
-        if links:
-            data.setdefault('links', {}).update(links)
-        if meta:
-            data.setdefault('meta', {}).update(meta)
+        data['links']['subtype'] = viewset.get_resource_links(instance)['self']
 
         return data
 
