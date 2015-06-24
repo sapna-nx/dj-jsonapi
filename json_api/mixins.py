@@ -48,7 +48,13 @@ class CreateResourceMixin(object):
         deferred_relationships = dict()
         for relname, reldata in data.get('relationships', {}).items():
             rel = self.get_relationship(relname)
-            related = self.get_related_from_data(rel, data)
+
+            try:
+                reldata = reldata['data']
+            except KeyError:
+                raise ParseError('Relationship \'data\' object not found in request data for \'%s\'.' % relname)
+
+            related = self.get_related_from_data(rel, reldata)
 
             # check permissions and determine if deferred
             if rel.info.to_many:
@@ -57,7 +63,7 @@ class CreateResourceMixin(object):
                 deferred_relationships[rel] = related
             else:
                 rel.viewset.check_object_permissions(self.request, related)
-                relationships[rel] = related
+                relationships[relname] = related
 
         instance = serializer.save(**relationships)
 
@@ -167,7 +173,13 @@ class UpdateResourceMixin(object):
         relationships = dict()
         for relname, reldata in data.get('relationships', {}).items():
             rel = self.get_relationship(relname)
-            related = self.get_related_from_data(rel, data)
+
+            try:
+                reldata = reldata['data']
+            except KeyError:
+                raise ParseError('Relationship \'data\' object not found in request data for \'%s\'.' % relname)
+
+            related = self.get_related_from_data(rel, reldata)
             relationships[rel] = related
 
             # check permissions
