@@ -82,7 +82,7 @@ class ResourceIdentifierSerializer(serializers.ModelSerializer):
     http://jsonapi.org/format/#document-structure-resource-identifier-objects
     """
 
-    def get_default_field_names(self, declared_fields, model_info):
+    def get_field_names(self, declared_fields, model_info):
         return (model_info.pk.name, )
 
     def get_fields(self):
