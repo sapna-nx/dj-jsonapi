@@ -233,13 +233,13 @@ class ManageRelationshipMixin(object):
         self.perform_relationship_update(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def delete_relationship(self, request, pk, relname, *args, **kwargs):
+    def destroy_relationship(self, request, pk, relname, *args, **kwargs):
         data = request.data['data']
         rel = self.get_relationship(relname)
         if not rel.info.to_many:
             raise MethodNotAllowed()
 
-        self.perform_relationship_update(data)
+        self.perform_relationship_destroy(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_relationship_create(self, data):
@@ -256,7 +256,7 @@ class ManageRelationshipMixin(object):
 
         return self.set_related(rel, instance, related)
 
-    def perform_relationship_delete(self, data):
+    def perform_relationship_destroy(self, data):
         instance = self.get_object()
         rel = self.get_relationship()
         related = self.get_related_from_data(rel, data)
