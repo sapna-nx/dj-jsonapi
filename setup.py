@@ -9,15 +9,17 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 setup(
     name='dj-jsonapi',
     version='0.0.1',
-    packages=find_packages(),
-    include_package_data=True,
     license='BSD License',
+
+    description='A JSON-API server implementation built for Django on top of Django Rest Framework',
     long_description=README,
-    url='https://github.com/itng/dj-jsonapi',
+    url='https://github.com/ITNG/dj-jsonapi',
     author='Ryan P Kilby',
     author_email='rpkilby@ncsu.edu',
-
-    # install_requires=[],
+    install_requires=['djangorestframework>=3', ],
+    tests_require=['django', 'djangorestframework>=3', ],
+    test_suite='tests.runner.main',
+    packages=find_packages(exclude=('tests', )),
 
     classifiers=[
         'Development Status :: 3 - Alpha',
