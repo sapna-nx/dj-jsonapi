@@ -17,6 +17,7 @@ def main():
     Test handler code based on Django's 'test' command:
     https://github.com/django/django/blob/1.8/django/core/management/commands/test.py#L79
     """
+    # TODO: https://github.com/ITNG/dj-jsonapi/issues/9
     from django.conf import settings
     from django.test import utils
 
@@ -33,8 +34,9 @@ def main():
 
     failures = test_runner.run_tests([test_module_name])
 
-    if failures:
-        sys.exit(bool(failures))
+    # we want to exit here, otherwise the setuptools test command will fail
+    # as it is expecting a test suite to to be returned.
+    sys.exit(bool(failures))
 
 
 if __name__ == '__main__':
