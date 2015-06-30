@@ -123,12 +123,11 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         data = OrderedDict((
             ('id', instance.pk),
             ('type', self.get_resource_type(instance)),
+            ('links', self.get_resource_links(instance)),
+            ('attributes', serializer.data),
+            ('relationships', self.get_relationship_objects(instance)),
+            ('meta', self.get_resource_meta(instance)),
         ))
-
-        data['attributes'] = serializer.data
-        data['relationships'] = self.get_relationship_objects(instance)
-        data['links'] = self.get_resource_links(instance)
-        data['meta'] = self.get_resource_meta(instance)
 
         for key, value in data.items():
             if not value:

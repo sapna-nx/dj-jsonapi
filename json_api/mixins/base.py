@@ -68,7 +68,7 @@ class CreateResourceMixin(object):
         instance = serializer.save(**relationships)
 
         for rel, related in deferred_relationships.items():
-            return self.link_related(rel, instance, related)
+            self.link_related(rel, instance, related)
 
         return instance
 
@@ -192,7 +192,7 @@ class UpdateResourceMixin(object):
         instance = serializer.save()
 
         for rel, related in relationships.items():
-            return self.set_related(rel, instance, related)
+            self.set_related(rel, instance, related)
 
         return instance
 
