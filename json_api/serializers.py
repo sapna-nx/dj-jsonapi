@@ -1,5 +1,5 @@
 
-import six
+from django.utils import six
 from collections import OrderedDict
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.utils import model_meta
@@ -21,7 +21,7 @@ class CheckedTypeField(serializers.Field):
         return super(CheckedTypeField, self).run_validation(data)
 
     def validate_type(self, data):
-        expected = self.parent.Meta.model._meta.verbose_name
+        expected = verbose_name(self.parent.Meta.model)
         if data != expected:
             raise serializers.ValidationError(
                 'Incorrect type. Expected \'{}\', but got \'{}\'.'.format(

@@ -1,5 +1,4 @@
 
-import six
 from collections import OrderedDict
 from rest_framework import exceptions
 from rest_framework.views import exception_handler as _exception_handler
@@ -7,6 +6,7 @@ from rest_framework import status
 from django.core.exceptions import PermissionDenied as DjPermissionDenied
 from django.http import Http404
 from django.utils.encoding import force_text
+from django.utils import six
 
 
 def handler(exc, context):

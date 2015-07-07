@@ -1,9 +1,9 @@
 
 import inspect
-import six
 from collections import OrderedDict
 from django.db.models.query import QuerySet
 from django.db.models import Value, CharField
+from django.utils import six
 from rest_framework.generics import GenericAPIView
 
 from json_api.utils import model_meta, import_class

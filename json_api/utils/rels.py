@@ -1,7 +1,7 @@
 
-import six
 import inspect
 from collections import namedtuple
+from django.utils import six
 
 from . import import_class
 
