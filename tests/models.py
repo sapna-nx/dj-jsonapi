@@ -22,3 +22,23 @@ class Related(models.Model):
 
 class OtherRelated(models.Model):
     related = models.ForeignKey(Related)
+
+
+# forward/reverse relationship testing models
+class Author(models.Model):
+    name = models.CharField(max_length=100)
+
+
+class Cover(models.Model):
+    text = models.CharField(max_length=100)
+
+
+class Tag(models.Model):
+    text = models.CharField(max_length=100)
+
+
+class Book(models.Model):
+    author = models.ForeignKey(Author)
+    cover = models.OneToOneField(Cover)
+    tags = models.ManyToManyField(Tag)
+    title = models.CharField(max_length=100)

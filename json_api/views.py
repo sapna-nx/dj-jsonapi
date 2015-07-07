@@ -11,6 +11,10 @@ class ResourceView(APIView):
     Base class for all json-api views. Contains some base machinery necessary
     for resolving realtionships and building json-api compliant responses.
     """
+    # TODO: verify that `requst = None` is safe. Does DRF ever rely on
+    # the request attribute not being set? Should view code be rewritten to
+    # not assume that requests exist?
+    request = None
     relationships = None
     relname_url_kwarg = 'relname'
 
