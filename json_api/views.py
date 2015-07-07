@@ -1,5 +1,6 @@
 
 from collections import OrderedDict
+from django.utils.functional import cached_property
 from rest_framework.views import APIView
 from json_api.utils.reverse import reverse
 from json_api import routers, exceptions
@@ -15,11 +16,21 @@ class ResourceView(APIView):
 
     allow_client_generated_ids = False
 
-    def initial(self, *args, **kwargs):
-        super(ResourceView, self).initial(*args, **kwargs)
+    # This is somewhat gross, however it does allow us to declaratively set the
+    # relationships on the class while still accessing the resolved rels on
+    # the instance.
+    # The rels cannot be resolved in __init__, as this could potentially set
+    # off infinite recursion of relationship resolving.
+    # The rels should not be resolved in `initial()`, since this ties resolving
+    # to request dispatching.
+    def __getattribute__(self, name):
+        if name == 'relationships':
+            return self._resolved_relationships
+        return super(ResourceView, self).__getattribute__(name)
 
-        if self.relationships:
-            self.relationships = self.resolve_relationships(self.relationships)
+    @cached_property
+    def _resolved_relationships(self):
+        return self.resolve_relationships(self.__class__.relationships)
 
     def resolve_relationships(self, relationships):
         """
