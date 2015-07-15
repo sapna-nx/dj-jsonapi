@@ -1,12 +1,15 @@
 
 from unittest import TestCase as UTestCase
 from django.test import TestCase
+from rest_framework import serializers
 
 from json_api.utils import import_class
 from json_api.utils.model_meta import get_field_info, verbose_name
+from json_api.utils.view_meta import get_field_attnames
 from json_api.utils.rels import rel, model_rel
 
 from tests.models import Parent, Child, Proxy, Related
+from tests.views import BookView
 
 
 class Import:
@@ -86,3 +89,39 @@ class TestRels(UTestCase):
         self.assertEqual(m.viewset.__class__, Import)
 
         self.assertIsNone(m.viewset.request)
+
+
+class TestViewMeta(TestCase):
+
+    def test_field_attnames(self):
+        actual = get_field_attnames(BookView)
+        expected = {
+            'title': 'title',
+            'author': 'author',
+            'cover': 'cover',
+            'tags': 'tags',
+        }
+        self.assertEqual(actual, expected)
+
+    def test_field_attnames_alternate_names(self):
+        BookSerializer = BookView.serializer_class
+
+        class AltBookSerializer(BookSerializer):
+            alt_title = serializers.CharField(source='title')
+
+            class Meta(BookSerializer.Meta):
+                fields = ['alt_title', ]
+
+        class AltBookView(BookView):
+            serializer_class = AltBookSerializer
+
+            relationships = [
+                rel('author', 'tests.test_filters.AuthorView', 'foo'),
+            ]
+
+        actual = get_field_attnames(AltBookView)
+        expected = {
+            'alt_title': 'title',
+            'author': 'foo',
+        }
+        self.assertEqual(actual, expected)

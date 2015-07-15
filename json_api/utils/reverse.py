@@ -7,6 +7,9 @@ def relative_viewname(viewname, resolver):
     Helper for building a fully namespaced `viewname` given a URL resolver.
     (This is typically from the current request.)
     """
+    if resolver is None:
+        return viewname
+
     return ':'.join(
         filter(None, [
             resolver.app_name, resolver.namespace, viewname
