@@ -79,7 +79,7 @@ class RelatedOrderingFilterTests(UTestCase):
         self.assertEqual(self.filter.translate_field('alt_title', view), 'title')
         self.assertEqual(self.filter.translate_field('-alt_author', view), '-author')
 
-    def test_get_valid_fields(self):
+    def test_get_ordering_fields(self):
         class NoDefinedFields(BookView):
             ordering_fields = None
 
@@ -93,23 +93,23 @@ class RelatedOrderingFilterTests(UTestCase):
             ordering_fields = ['foo', 'bar']
 
         view = NoDefinedFields()
-        self.assertEqual(self.filter.get_valid_fields(view), [])
+        self.assertEqual(self.filter.get_ordering_fields(view), [])
 
         view = AllFields()
         self.assertItemsEqual(
-            self.filter.get_valid_fields(view),
+            self.filter.get_ordering_fields(view),
             ['author', 'tags', 'cover', 'title']
         )
 
         view = FieldSubset()
         self.assertItemsEqual(
-            self.filter.get_valid_fields(view),
+            self.filter.get_ordering_fields(view),
             ['author', 'title']
         )
 
         view = InvalidFields()
         with self.assertRaisesRegexp(AssertionError, 'must be valid resource fields'):
-            self.filter.get_valid_fields(view)
+            self.filter.get_ordering_fields(view)
 
     def test_is_invalid_field(self):
         class NoDefinedFields(BookView):

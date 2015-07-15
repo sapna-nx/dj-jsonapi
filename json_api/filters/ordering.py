@@ -53,29 +53,29 @@ class RelatedOrderingFilter(OrderingFilter):
             return '__'.join([field, related])
         return field
 
-    def get_valid_fields(self, view):
+    def get_ordering_fields(self, view):
         """
-        Returns the valid fields for a resource view.
+        Returns the set of fields for a resource view that are able to be ordered upon.
 
         Reference:
         http://jsonapi.org/format/#document-resource-object-fields
 
         """
-        valid_fields = getattr(view, 'ordering_fields', self.ordering_fields)
+        ordering_fields = getattr(view, 'ordering_fields', self.ordering_fields)
         all_fields = view_meta.get_field_attnames(view).keys()
 
-        if valid_fields is None:
-            valid_fields = []
+        if ordering_fields is None:
+            ordering_fields = []
 
-        elif valid_fields == '__all__':
-            valid_fields = all_fields
+        elif ordering_fields == '__all__':
+            ordering_fields = all_fields
 
         # ensure that the valid ordering fields are within the set of all fields
-        assert set(valid_fields).issubset(set(all_fields)), \
+        assert set(ordering_fields).issubset(set(all_fields)), \
             "'%s.ordering_fields' must be valid resource fields. Valid fields: %s" % \
             (view.__class__.__name__, all_fields)
 
-        return valid_fields
+        return ordering_fields
 
     def remove_invalid_fields(self, queryset, fields, view):
         invalid_fields = [field.lstrip('-') for field in fields]
@@ -101,7 +101,7 @@ class RelatedOrderingFilter(OrderingFilter):
         http://jsonapi.org/format/#document-resource-object-fields
 
         """
-        valid_fields = self.get_valid_fields(view)
+        ordering_fields = self.get_ordering_fields(view)
 
         # determine if this is a relationship path or an attribute
         try:
@@ -121,4 +121,4 @@ class RelatedOrderingFilter(OrderingFilter):
                 return self.is_invalid_field(related, rel.viewset)
 
         # ensure fields is within set of all valid fields
-        return field not in valid_fields
+        return field not in ordering_fields
