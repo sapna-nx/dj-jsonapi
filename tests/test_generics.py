@@ -32,7 +32,7 @@ class AuthorView(generics.GenericResourceView):
     queryset = models.Author.objects.all()
     serializer_class = AuthorSerializer
 
-    relationships = [rel('book', 'tests.test_generics.BookView', 'books'), ]
+    relationships = [rel('books', 'tests.test_generics.BookView', 'book'), ]
 
 
 class CoverView(generics.GenericResourceView):
@@ -46,7 +46,7 @@ class TagView(generics.GenericResourceView):
     queryset = models.Tag.objects.all()
     serializer_class = TagSerializer
 
-    relationships = [rel('book', 'tests.test_generics.BookView', 'books'), ]
+    relationships = [rel('books', 'tests.test_generics.BookView', 'book'), ]
 
 
 class BookView(generics.GenericResourceView):

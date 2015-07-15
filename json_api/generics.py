@@ -8,7 +8,7 @@ from rest_framework.generics import GenericAPIView
 
 from json_api.utils import model_meta, import_class
 from json_api.utils.reverse import reverse
-from json_api.utils.rels import resolved_rel
+from json_api.utils.rels import model_rel
 from json_api.exceptions import PermissionDenied
 from json_api import serializers, views
 
@@ -22,7 +22,9 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         self.model_info = model_meta.get_field_info(model)
 
     def resolve_relationships(self, relationships):
-        return [resolved_rel(
+        if not relationships:
+            return []
+        return [model_rel(
             info=self.model_info.relations[rel.attname],
             request=self.request,
             **rel._asdict()

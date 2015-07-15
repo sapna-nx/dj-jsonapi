@@ -1,10 +1,12 @@
 
 from unittest import TestCase as UTestCase
 from django.test import TestCase
-from tests.models import Parent, Child, Proxy, Related
 
 from json_api.utils import import_class
 from json_api.utils.model_meta import get_field_info, verbose_name
+from json_api.utils.rels import rel, model_rel
+
+from tests.models import Parent, Child, Proxy, Related
 
 
 class Import:
@@ -58,3 +60,29 @@ class TestModelMeta(TestCase):
 
         self.assertEqual(info.reverse_relations.keys(), ['otherrelated'])
         self.assertEqual(info.relations.keys(), ['parent', 'otherrelated'])
+
+
+class TestRels(UTestCase):
+
+    def test_rel(self):
+        self.assertEqual(
+            rel('a', 'b')._asdict(),
+            {'relname': 'a', 'viewset': 'b', 'attname': 'a'}
+        )
+
+        self.assertEqual(
+            rel('a', 'b', 'c')._asdict(),
+            {'relname': 'a', 'viewset': 'b', 'attname': 'c'}
+        )
+
+    def test_model_rel(self):
+        m = model_rel('a', 'a', 'tests.test_utils.Import', None, None)
+        self.assertEqual(m.viewset.__class__, Import)
+
+        m = model_rel('a', 'a', Import(), None, None)
+        self.assertEqual(m.viewset.__class__, Import)
+
+        m = model_rel('a', 'a', Import, None, None)
+        self.assertEqual(m.viewset.__class__, Import)
+
+        self.assertIsNone(m.viewset.request)
