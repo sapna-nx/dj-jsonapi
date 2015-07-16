@@ -42,3 +42,20 @@ class Book(models.Model):
     cover = models.OneToOneField(Cover)
     tags = models.ManyToManyField(Tag)
     title = models.CharField(max_length=100)
+
+
+# models for 'deeply nested' relationships
+class Person(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.EmailField(blank=True)
+
+
+class Article(models.Model):
+    author = models.ForeignKey(Person)
+    title = models.CharField(max_length=100)
+
+
+class Comment(models.Model):
+    author = models.ForeignKey(Person)
+    article = models.ForeignKey(Article)
+    body = models.CharField(max_length=100)

@@ -86,20 +86,30 @@ class ListResourceMixin(object):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
+        include_paths = self.get_include_paths(queryset)
+
         page = self.paginate_queryset(queryset)
         self.page = page
         if page is not None:
             data = [self.build_resource(instance) for instance in page]
+            included_data = self.get_included_data(page, include_paths).values()
+
         else:
             data = [self.build_resource(instance) for instance in queryset]
+            included_data = self.get_included_data(queryset, include_paths).values()
 
         links = self.get_default_links()
         links.update(self.get_collection_actions())
 
-        response_data = self.build_response_body(
-            links=links,
-            data=data,
-        )
+        body = {
+            'links': links,
+            'data': data,
+        }
+
+        if included_data:
+            body['included'] = included_data
+
+        response_data = self.build_response_body(**body)
         return Response(response_data)
 
 
@@ -108,14 +118,24 @@ class RetrieveResourceMixin(object):
     Retrieve a model instance.
     """
     def retrieve(self, request, *args, **kwargs):
+        # TODO:
+        # queryset optimization hooks into `get_object()`
         instance = self.get_object()
+        paths = self.get_include_paths(self.get_queryset())
+
         links = self.get_default_links()
         data = self.build_resource(instance)
+        included_data = self.get_included_data(instance, paths).values()
 
-        response_data = self.build_response_body(
-            links=links,
-            data=data,
-        )
+        body = {
+            'links': links,
+            'data': data,
+        }
+
+        if included_data:
+            body['included'] = included_data
+
+        response_data = self.build_response_body(**body)
         return Response(response_data)
 
 

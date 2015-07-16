@@ -22,3 +22,18 @@ class TagSerializer(ResourceSerializer):
 class BookSerializer(ResourceSerializer):
     class Meta:
         model = models.Book
+
+
+class PersonSerializer(ResourceSerializer):
+    class Meta:
+        model = models.Person
+
+
+class ArticleSerializer(ResourceSerializer):
+    class Meta:
+        model = models.Article
+
+
+class CommentSerializer(ResourceSerializer):
+    class Meta:
+        model = models.Comment

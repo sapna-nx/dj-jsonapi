@@ -12,3 +12,6 @@ INSTALLED_APPS = (
     'json_api',
     'tests',
 )
+
+
+ROOT_URLCONF = 'tests.urls'

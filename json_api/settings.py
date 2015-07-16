@@ -63,10 +63,11 @@ DEFAULTS.update({
 # JSON-API settings
 DEFAULTS.update({
     'PATH_DELIMITER': '.',
+    'DEFAULT_INCLUSION_CLASS': 'json_api.inclusion.RelatedResourceInclusion',
 })
 
 
-IMPORT_STRINGS = drf_settings.IMPORT_STRINGS
+IMPORT_STRINGS = drf_settings.IMPORT_STRINGS + ('DEFAULT_INCLUSION_CLASS', )
 
 
 api_settings = drf_settings.APISettings(USER_SETTINGS, DEFAULTS, IMPORT_STRINGS)

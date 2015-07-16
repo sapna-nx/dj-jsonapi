@@ -10,10 +10,12 @@ from json_api.utils import model_meta, import_class
 from json_api.utils.reverse import reverse
 from json_api.utils.rels import model_rel
 from json_api.exceptions import PermissionDenied
+from json_api.settings import api_settings
 from json_api import serializers, views
 
 
 class GenericResourceView(views.ResourceView, GenericAPIView):
+    inclusion_class = api_settings.DEFAULT_INCLUSION_CLASS
 
     def __init__(self, *args, **kwargs):
         super(GenericResourceView, self).__init__(*args, **kwargs)
@@ -73,6 +75,15 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         """
         # TODO: this is correct, right?
         return rel.viewset.get_serializer_class()
+
+    def get_serializer_context(self):
+        """
+        Extra context provided to the serializer class.
+        """
+        return {
+            'request': self.request,
+            'view': self
+        }
 
     def get_default_links(self):
         """
@@ -338,6 +349,34 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             related = rel.info.related_model.objects.get(pk=related_pk)
 
         return related
+
+    @property
+    def includer(self):
+        """
+        The includer instance associated with the view, or `None`.
+        """
+        if not hasattr(self, '_includer'):
+            if self.inclusion_class is None:
+                self._includer = None
+            else:
+                self._includer = self.inclusion_class()
+        return self._includer
+
+    def get_include_paths(self, queryset):
+        """
+        Get the relationship paths of the objects to be included.
+        """
+        if self.includer is None:
+            return None
+        return self.includer.get_include_paths(queryset, self.request, view=self)
+
+    def get_included_data(self, data, paths):
+        """
+        Return the related data to be included in the response.
+        """
+        if self.includer is None:
+            return None
+        return self.includer.get_included_data(data, paths, self)
 
     def link_related(self, rel, instance, related):
         accessor_name = self.get_related_accessor_name(rel, instance)
