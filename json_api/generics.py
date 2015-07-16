@@ -444,6 +444,4 @@ class GenericPolymorphicResourceView(GenericResourceView):
             viewset = viewset()
 
         viewset.request = self.request
-        viewset.relationships = viewset.resolve_relationships(viewset.relationships)
-
         return viewset
