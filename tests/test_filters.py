@@ -3,7 +3,7 @@ from unittest import TestCase as UTestCase
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 from rest_framework import serializers
-from json_api import mixins, filters
+from json_api import filters
 from json_api.utils.rels import rel
 
 from tests import views, models
@@ -12,31 +12,36 @@ factory = APIRequestFactory()
 
 
 # forward/reverse relationship testing generic views
-class ListMixin(mixins.ListResourceMixin):
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-    def get_resource_links(self, *args, **kwargs):
-        return {}
-
-    def get_relationship_links(self, *args, **kwargs):
-        return {}
-
-
-class AuthorView(ListMixin, views.AuthorView):
+class AuthorView(views.ListMixin, views.AuthorView):
     filter_backends = (filters.RelatedOrderingFilter, )
+    ordering_fields = '__all__'
+
+    relationships = [rel('books', 'tests.test_filters.BookView', 'book'), ]
 
 
-class CoverView(ListMixin, views.CoverView):
+class CoverView(views.ListMixin, views.CoverView):
     filter_backends = (filters.RelatedOrderingFilter, )
+    ordering_fields = '__all__'
+
+    relationships = [rel('book', 'tests.test_filters.BookView'), ]
 
 
-class TagView(ListMixin, views.TagView):
+class TagView(views.ListMixin, views.TagView):
     filter_backends = (filters.RelatedOrderingFilter, )
+    ordering_fields = '__all__'
+
+    relationships = [rel('books', 'tests.test_filters.BookView', 'book'), ]
 
 
-class BookView(ListMixin, views.BookView):
+class BookView(views.ListMixin, views.BookView):
     filter_backends = (filters.RelatedOrderingFilter, )
+    ordering_fields = '__all__'
+
+    relationships = [
+        rel('author', 'tests.test_filters.AuthorView'),
+        rel('cover', 'tests.test_filters.CoverView'),
+        rel('tags', 'tests.test_filters.TagView'),
+    ]
 
 
 class RelatedOrderingFilterTests(UTestCase):

@@ -12,7 +12,7 @@ class RelatedOrderingFilter(OrderingFilter):
     Adapated from:
     https://github.com/tomchristie/django-rest-framework/issues/1005
     """
-    ordering_delimiter = api_settings.FILTER_DELIMITER
+    ordering_delimiter = api_settings.PATH_DELIMITER
 
     def get_ordering(self, request, queryset, view):
         ordering = super(RelatedOrderingFilter, self).get_ordering(request, queryset, view)

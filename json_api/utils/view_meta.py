@@ -2,9 +2,9 @@
 from django.core.exceptions import ImproperlyConfigured
 
 
-def get_field_attnames(view):
+def get_attribute_attnames(view):
     """
-    Return a map of {resource field: model attname} for a view.
+    Return a map of {resource attribute name: model attname} for a view.
     """
     serializer_class = getattr(view, 'serializer_class')
     if serializer_class is None:
@@ -13,15 +13,24 @@ def get_field_attnames(view):
             "does not have a 'serializer_class'."
         )
 
-    field_map = {
+    return {
         field_name: field.source
         for field_name, field in serializer_class().fields.items()
         if not getattr(field, 'write_only', False)
     }
 
-    if hasattr(view, 'relationships'):
-        field_map.update({
-            rel.relname: rel.attname for rel in view.relationships
-        })
 
-    return field_map
+def get_rel_attnames(view):
+    """
+    Return a map of {resource rel name: model attname} for a view.
+    """
+    return {rel.relname: rel.attname for rel in view.relationships}
+
+
+def get_field_attnames(view):
+    """
+    Return a map of {resource field name: model attname} for a view.
+    """
+    fields_map = get_attribute_attnames(view)
+    fields_map.update(get_rel_attnames(view))
+    return fields_map
