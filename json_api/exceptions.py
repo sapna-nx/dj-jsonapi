@@ -95,10 +95,10 @@ class APIError(exceptions.APIException):
 
     def __init__(self, *args, **kwargs):
 
-        error = OrderedDict([
+        self._data = OrderedDict([
             ('id',      kwargs.pop('id', None)),
             ('links',   kwargs.pop('links', None)),
-            ('status',  kwargs.pop('status', None) or self.status_code),
+            ('status',  kwargs.pop('status', self.status_code)),
             ('code',    kwargs.pop('code', None)),
             ('title',   kwargs.pop('title', None)),
             ('detail',  None),
@@ -108,13 +108,17 @@ class APIError(exceptions.APIException):
 
         super(APIError, self).__init__(*args, **kwargs)
 
+    @property
+    def data(self):
+        error = self._data.copy()
+
         error['detail'] = self.detail
 
         for key, value in error.items():
             if value is None:
                 del error[key]
 
-        self.data = error
+        return error
 
 
 class _Conflict(exceptions.APIException):
@@ -125,7 +129,13 @@ class _Conflict(exceptions.APIException):
 
 
 class ValidationError(APIError, exceptions.ValidationError):
-    pass
+    def __init__(self, *args, **kwargs):
+        # pull error message back out of the array.
+        super(ValidationError, self).__init__(*args, **kwargs)
+
+        # TODO: Figure out a better solution
+        if isinstance(self.detail, list) and len(self.detail) == 1:
+            self.detail = self.detail[0]
 
 
 class ParseError(APIError, exceptions.ParseError):
