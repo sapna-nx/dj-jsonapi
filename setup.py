@@ -17,7 +17,7 @@ setup(
     author='Ryan P Kilby',
     author_email='rpkilby@ncsu.edu',
     install_requires=['djangorestframework>=3', ],
-    tests_require=['django', 'djangorestframework>=3', ],
+    tests_require=['django', 'djangorestframework>=3', 'requests', ],
     test_suite='tests.runner.main',
     packages=find_packages(exclude=('tests', )),
 
