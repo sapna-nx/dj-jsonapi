@@ -82,6 +82,7 @@ class Command(testserver.Command):
         return results
 
     def handle(self, *fixture_labels, **options):
+        label = 'fantasy.json'
 
         response = requests.get('https://raw.githubusercontent.com/endpoints/fantasy-database/master/data.json')
         data = response.json()
@@ -89,9 +90,14 @@ class Command(testserver.Command):
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
 
         with open(path, 'w') as f:
-            data = self.translate_fixture(data)
-            f.write(json.dumps(data))
+            try:
+                data = self.translate_fixture(data)
+                f.write(json.dumps(data))
 
-        fixture_labels += (path, )
+                label = path
+            except AssertionError:
+                pass
+
+        fixture_labels += (label, )
 
         super(Command, self).handle(*fixture_labels, **options)
