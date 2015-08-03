@@ -1,7 +1,6 @@
 import os
 import sys
 import glob
-import django
 
 base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 eggs = os.path.abspath(os.path.join(base, "*.egg"))
@@ -12,32 +11,12 @@ sys.path.append(base)
 os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
 
 
-def main():
-    """
-    Test handler code based on Django's 'test' command:
-    https://github.com/django/django/blob/1.8/django/core/management/commands/test.py#L79
-    """
-    # TODO: https://github.com/ITNG/dj-jsonapi/issues/9
-    from django.conf import settings
-    from django.test import utils
-
-    try:
-        # https://docs.djangoproject.com/en/1.8/releases/1.7/#app-loading-changes
-        django.setup()
-    except:
-        pass
-
-    TestRunner = utils.get_runner(settings)
-    test_runner = TestRunner()
-
-    test_module_name = 'tests'
-
-    failures = test_runner.run_tests([test_module_name])
-
-    # we want to exit here, otherwise the setuptools test command will fail
-    # as it is expecting a test suite to to be returned.
-    sys.exit(bool(failures))
+def main(argv):
+    from django.core.management import execute_from_command_line
+    execute_from_command_line(argv)
 
 
 if __name__ == '__main__':
-    main()
+    args = sys.argv
+    args.insert(1, 'test')
+    main(args)

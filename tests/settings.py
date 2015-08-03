@@ -9,7 +9,10 @@ DATABASES = {
 }
 
 INSTALLED_APPS = (
-    'json_api',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    # 'django_fantasy',
+    # 'json_api.fantasy',
     'tests',
 )
 
