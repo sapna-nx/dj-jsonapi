@@ -2,7 +2,8 @@
 from json_api import viewsets
 from json_api.utils.rels import rel
 
-from json_api.fantasy import models, serializers
+from json_api.fantasy import serializers
+from django_fantasy import models
 
 
 class AuthorView(viewsets.ResourceViewSet):

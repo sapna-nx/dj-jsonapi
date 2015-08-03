@@ -3,8 +3,6 @@
 
 A test app that that provides a JSON-API implementation of [endpoints/fantasy-database](https://github.com/endpoints/fantasy-database).
 
-The `testserver` command has been overridden to download and install the fantasy-database test data.
-
 Example usage:
 
 In your `settings.py` module:
@@ -17,6 +15,7 @@ TESTING = len(sys.argv) > 1 and sys.argv[1] in ('test', 'testserver')
 if TESTING:
     # eventually, fantasy should be moved out of this project
     INSTALLED_APPS += (
+        'django_fantasy',
         'json_api.fantasy',
     )
 

@@ -1,6 +1,6 @@
 
 from json_api.serializers import ResourceSerializer
-from json_api.fantasy import models
+from django_fantasy import models
 
 
 class AuthorSerializer(ResourceSerializer):
