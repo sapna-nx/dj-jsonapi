@@ -23,7 +23,7 @@ class SeriesView(viewsets.ResourceViewSet):
 
     relationships = (
         rel('books', 'json_api.fantasy.views.BookView', 'book'),
-        rel('photo', 'json_api.fantasy.views.PhotoView'),
+        # rel('photo', 'json_api.fantasy.views.PhotoView'),
     )
 
 
