@@ -216,7 +216,9 @@ class RelatedResourceInclusion(BaseInclusion):
                 # use the related view to access the included data.
                 # this will perform permission checks, filtering, etc...
                 related_data = view.get_related_data(rel, instance)
-                if not isinstance(related_data, Iterable):
+                if related_data is None:
+                    related_data = []
+                elif not isinstance(related_data, Iterable):
                     related_data = [related_data]
 
                 # use the related view to go ahead and build the resource objects
