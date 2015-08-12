@@ -2,7 +2,7 @@
 from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
-from json_api.exceptions import ParseError, PermissionDenied, Conflict, MethodNotAllowed
+from json_api.exceptions import MethodNotAllowed
 
 
 class RetrieveRelationshipMixin(object):
@@ -15,7 +15,7 @@ class RetrieveRelationshipMixin(object):
 
 class ManageRelationshipMixin(object):
     def create_relationship(self, request, pk, relname, *args, **kwargs):
-        data = request.data['data']
+        data = self.get_data(request)
         rel = self.get_relationship()
         if not rel.info.to_many:
             raise MethodNotAllowed()
@@ -24,12 +24,12 @@ class ManageRelationshipMixin(object):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def update_relationship(self, request, pk, relname, *args, **kwargs):
-        data = request.data['data']
+        data = self.get_data(request)
         self.perform_relationship_update(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def destroy_relationship(self, request, pk, relname, *args, **kwargs):
-        data = request.data['data']
+        data = self.get_data(request)
         rel = self.get_relationship(relname)
         if not rel.info.to_many:
             raise MethodNotAllowed()

@@ -10,10 +10,7 @@ class CreateResourceMixin(object):
     Create a resource instance.
     """
     def create(self, request, *args, **kwargs):
-        try:
-            data = request.data['data']
-        except KeyError:
-            raise ParseError('Primary \'data\' key not found in request data.')
+        data = self.get_data(request)
 
         # Until a solution for content negotiation of extensions has been
         # determined, don't handle bulk creation
@@ -144,10 +141,7 @@ class UpdateResourceMixin(object):
     Update a model instance.
     """
     def update(self, request, *args, **kwargs):
-        try:
-            data = request.data['data']
-        except KeyError:
-            raise ParseError('Primary \'data\' key not found in request data.')
+        data = self.get_data(request)
 
         partial = kwargs.pop('partial', False)
 

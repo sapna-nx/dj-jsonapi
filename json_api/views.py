@@ -81,6 +81,17 @@ class ResourceView(APIView):
 
         return detail_views, list_views
 
+    def get_data(self, request):
+        """
+        Get the primary data from the request.
+        """
+        try:
+            return request.data['data']
+        except KeyError:
+            raise exceptions.ParseError(
+                'Primary \'data\' not found in request document.', source={'pointer': '/'}
+            )
+
     def get_resource_actions(self, resource_id):
         """
         Returns a dictionary of {urlname: url} for a resource's action routes.
