@@ -37,23 +37,29 @@ class ManageRelationshipMixin(object):
         self.perform_relationship_destroy(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @transaction.atomic
     def perform_relationship_create(self, data):
         instance = self.get_object()
         rel = self.get_relationship()
         related = self.get_related_from_data(rel, data)
 
-        return self.link_related(rel, instance, related)
+        self.link_related(rel, instance, related)
+        instance.save()
 
+    @transaction.atomic
     def perform_relationship_update(self, data):
         instance = self.get_object()
         rel = self.get_relationship()
         related = self.get_related_from_data(rel, data)
 
-        return self.set_related(rel, instance, related)
+        self.set_related(rel, instance, related)
+        instance.save()
 
+    @transaction.atomic
     def perform_relationship_destroy(self, data):
         instance = self.get_object()
         rel = self.get_relationship()
         related = self.get_related_from_data(rel, data)
 
-        return self.unlink_related(rel, instance, related)
+        self.unlink_related(rel, instance, related)
+        instance.save()

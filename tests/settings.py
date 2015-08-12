@@ -11,10 +11,12 @@ DATABASES = {
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    # 'django_fantasy',
-    # 'json_api.fantasy',
+    'django_fantasy',
     'tests',
 )
 
 
 ROOT_URLCONF = 'tests.urls'
+
+
+USE_TZ = True

@@ -337,6 +337,9 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         # only has enough context to determine if the type is within the overall valid
         # set of {A, B, C}, but not whether it is consistent with its corresponding
         # instances' types.
+        if data is None:
+            return None
+
         serializer = self.get_identity_serializer(rel)(data=data, many=rel.info.to_many)
         serializer.is_valid(raise_exception=True)
 

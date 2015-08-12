@@ -1,4 +1,7 @@
-"""
-Blank URLConf just to keep the test suite happy
-"""
-urlpatterns = []
+
+from django.conf.urls import include, url
+
+
+urlpatterns = [
+    url(r'^', include('json_api.fantasy.urls')),
+]
