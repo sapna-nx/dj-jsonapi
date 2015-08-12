@@ -45,8 +45,8 @@ DEFAULTS.update({
     ),
     'DEFAULT_PARSER_CLASSES': (
         'json_api.parsers.APIParser',
-        'json_api.parsers.FormParser',
-        'json_api.parsers.MultiPartParser',
+        # 'json_api.parsers.FormParser',
+        # 'json_api.parsers.MultiPartParser',
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
@@ -57,7 +57,6 @@ DEFAULTS.update({
     # 'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'json_api.negotiation.Negotiator',
     # 'DEFAULT_METADATA_CLASS': 'json_api.metadata.APIMetadata',
     'EXCEPTION_HANDLER': 'json_api.exceptions.handler',
-    'FORM_OVERRIDE_DO_PARSE': True,
 })
 
 # JSON-API settings
