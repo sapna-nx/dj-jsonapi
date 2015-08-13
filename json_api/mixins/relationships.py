@@ -15,11 +15,11 @@ class RetrieveRelationshipMixin(object):
 
 class ManageRelationshipMixin(object):
     def create_relationship(self, request, pk, relname, *args, **kwargs):
-        data = self.get_data(request)
         rel = self.get_relationship()
         if not rel.info.to_many:
-            raise MethodNotAllowed()
+            raise MethodNotAllowed(request.method)
 
+        data = self.get_data(request)
         self.perform_relationship_create(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -29,11 +29,11 @@ class ManageRelationshipMixin(object):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def destroy_relationship(self, request, pk, relname, *args, **kwargs):
-        data = self.get_data(request)
         rel = self.get_relationship(relname)
         if not rel.info.to_many:
-            raise MethodNotAllowed()
+            raise MethodNotAllowed(request.method)
 
+        data = self.get_data(request)
         self.perform_relationship_destroy(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

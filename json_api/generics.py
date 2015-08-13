@@ -337,7 +337,9 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         # only has enough context to determine if the type is within the overall valid
         # set of {A, B, C}, but not whether it is consistent with its corresponding
         # instances' types.
-        if data is None:
+
+        # None is valid value for to-one relationships
+        if data is None and not rel.info.to_many:
             return None
 
         serializer = self.get_identity_serializer(rel)(data=data, many=rel.info.to_many)
@@ -391,17 +393,29 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             getattr(instance, accessor_name).add(*related)
 
         else:
+            if not rel.info.model_field.null:
+                raise PermissionDenied('\'%s\' does not allow null values.' % rel.relname)
             rel.viewset.check_object_permissions(self.request, related)
             setattr(instance, accessor_name, related)
 
     def unlink_related(self, rel, instance, related):
+        # exit early if nothing to do
+        if not related:
+            return
+
         accessor_name = self.get_related_accessor_name(rel, instance)
 
         if rel.info.to_many:
+            # If the ForeignKey is not nullable, raise 403
+            manager = getattr(instance, accessor_name)
+            if not hasattr(manager, 'remove'):
+                raise PermissionDenied('\'%s\' does not allow null values.' % rel.relname)
+
             # check permissions first before assignment
             for related_object in related:
                 rel.viewset.check_object_permissions(self.request, related_object)
-            getattr(instance, accessor_name).remove(*related)
+
+            manager.remove(*related)
 
         else:
             rel.viewset.check_object_permissions(self.request, related)
@@ -410,6 +424,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
     def set_related(self, rel, instance, related):
         if rel.info.to_many:
             current = self.get_related_data(rel, instance)
+            current = current.exclude(id__in=related)
             self.unlink_related(rel, instance, current)
         self.link_related(rel, instance, related)
 
