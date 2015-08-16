@@ -81,16 +81,56 @@ class ResourceView(APIView):
 
         return detail_views, list_views
 
-    def get_data(self, request):
+    def get_data(self, document):
         """
-        Get the primary data from the request.
+        Get the primary 'data' from the request document.
         """
         try:
-            return request.data['data']
+            return document['data']
         except KeyError:
-            raise exceptions.ParseError(
-                'Primary \'data\' not found in request document.', source={'pointer': '/'}
-            )
+            self.malformed_document('data', '/data')
+
+    def get_reldata(self, document, relname):
+        try:
+            return document['data']
+        except KeyError:
+            self.malformed_document('data', '/%s/data' % relname)
+
+    def malformed_document(self, key, pointer):
+        raise exceptions.ParseError(
+            '\'%s\' key not found in document.' % key,
+            title='Malformed Document',
+            source={'pointer': pointer},
+        )
+
+    def validate_identity(self, data, instance):
+        errors = []
+
+        # handle reource ID
+        if not instance:
+            if 'id' in data and not self.allow_client_generated_ids:
+                errors.append(
+                    exceptions.PermissionDenied('Client-Generated IDs are not supported.')
+                )
+        else:
+            if 'id' not in data:
+                errors.append(
+                    exceptions.ParseError('Resource ID not specified')
+                )
+
+            if data['id'] != instance.pk:
+                errors.append(
+                    exceptions.Conflict('Resource ID mismatch')
+                )
+
+        # handle resource type
+        if 'type' not in data:
+            errors.append(exceptions.ParseError('Resource type not specified'))
+        if data['type'] != self.get_resource_type():
+            errors.append(exceptions.Conflict('Resource type mismatch'))
+
+        if errors:
+            raise exceptions.ErrorList(errors)
 
     def get_resource_actions(self, resource_id):
         """

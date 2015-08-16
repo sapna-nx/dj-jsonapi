@@ -19,12 +19,12 @@ class ManageRelationshipMixin(object):
         if not rel.info.to_many:
             raise MethodNotAllowed(request.method)
 
-        data = self.get_data(request)
+        data = self.get_data(request.data)
         self.perform_relationship_create(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def update_relationship(self, request, pk, relname, *args, **kwargs):
-        data = self.get_data(request)
+        data = self.get_data(request.data)
         self.perform_relationship_update(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -33,7 +33,7 @@ class ManageRelationshipMixin(object):
         if not rel.info.to_many:
             raise MethodNotAllowed(request.method)
 
-        data = self.get_data(request)
+        data = self.get_data(request.data)
         self.perform_relationship_destroy(data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

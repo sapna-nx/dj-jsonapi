@@ -2,7 +2,6 @@
 from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
-from json_api.exceptions import ParseError, PermissionDenied, Conflict
 
 
 class CreateResourceMixin(object):
@@ -10,7 +9,7 @@ class CreateResourceMixin(object):
     Create a resource instance.
     """
     def create(self, request, *args, **kwargs):
-        data = self.get_data(request)
+        data = self.get_data(request.data)
 
         # Until a solution for content negotiation of extensions has been
         # determined, don't handle bulk creation
@@ -29,13 +28,7 @@ class CreateResourceMixin(object):
 
     @transaction.atomic
     def perform_create(self, data):
-        if 'id' in data:  # and not self.allow_client_generated_ids:
-            raise PermissionDenied('Client-Generated IDs are not supported.')
-
-        if 'type' not in data:
-            raise ParseError('Resource type not specified')
-        if data['type'] != self.get_resource_type():
-            raise Conflict('Resource type mismatch')
+        self.validate_identity(data)
 
         serializer = self.get_serializer(data=data.get('attributes', {}))
         serializer.is_valid(raise_exception=True)
@@ -43,13 +36,9 @@ class CreateResourceMixin(object):
         # to-many relationships should be deferred since it implies m2m or a reverse FK.
         relationships = dict()
         deferred_relationships = dict()
-        for relname, reldata in data.get('relationships', {}).items():
+        for relname, reldoc in data.get('relationships', {}).items():
             rel = self.get_relationship(relname)
-
-            try:
-                reldata = reldata['data']
-            except KeyError:
-                raise ParseError('Relationship \'data\' object not found in request data for \'%s\'.' % relname)
+            reldata = self.get_reldata(reldoc, relname)
 
             related = self.get_related_from_data(rel, reldata)
 
@@ -141,7 +130,7 @@ class UpdateResourceMixin(object):
     Update a model instance.
     """
     def update(self, request, *args, **kwargs):
-        data = self.get_data(request)
+        data = self.get_data(request.data)
 
         partial = kwargs.pop('partial', False)
 
@@ -166,16 +155,7 @@ class UpdateResourceMixin(object):
     @transaction.atomic
     def perform_update(self, data, partial=False):
         instance = self.get_object()
-
-        if 'id' not in data:
-            raise ParseError('Resource ID not specified')
-        if data['id'] != instance.pk:
-            raise Conflict('Resource ID mismatch')
-
-        if 'type' not in data:
-            raise ParseError('Resource type not specified')
-        if data['type'] != self.get_resource_type():
-            raise Conflict('Resource type mismatch')
+        self.validate_identity(data, instance)
 
         serializer = self.get_serializer(
             instance=instance,
@@ -185,13 +165,9 @@ class UpdateResourceMixin(object):
         serializer.is_valid(raise_exception=True)
 
         relationships = dict()
-        for relname, reldata in data.get('relationships', {}).items():
+        for relname, reldoc in data.get('relationships', {}).items():
             rel = self.get_relationship(relname)
-
-            try:
-                reldata = reldata['data']
-            except KeyError:
-                raise ParseError('Relationship \'data\' object not found in request data for \'%s\'.' % relname)
+            reldata = self.get_reldata(reldoc, relname)
 
             related = self.get_related_from_data(rel, reldata)
             relationships[rel] = related
