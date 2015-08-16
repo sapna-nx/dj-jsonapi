@@ -384,49 +384,53 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         return self.includer.get_included_data(data, paths, self)
 
     def link_related(self, rel, instance, related):
+        if not rel.info.to_many:
+            raise Exception('raise configuration error: to-one should not call link_related')
+
         accessor_name = self.get_related_accessor_name(rel, instance)
 
-        if rel.info.to_many:
-            # check permissions first before assignment
-            for related_object in related:
-                rel.viewset.check_object_permissions(self.request, related_object)
-            getattr(instance, accessor_name).add(*related)
-
-        else:
-            if not rel.info.model_field.null:
-                raise PermissionDenied('\'%s\' does not allow null values.' % rel.relname)
-            rel.viewset.check_object_permissions(self.request, related)
-            setattr(instance, accessor_name, related)
+        # check permissions first before assignment
+        for related_object in related:
+            rel.viewset.check_object_permissions(self.request, related_object)
+        getattr(instance, accessor_name).add(*related)
 
     def unlink_related(self, rel, instance, related):
+        if not rel.info.to_many:
+            raise Exception('raise configuration error: to-one should not call unlink_related')
+
         # exit early if nothing to do
         if not related:
             return
 
         accessor_name = self.get_related_accessor_name(rel, instance)
 
-        if rel.info.to_many:
-            # If the ForeignKey is not nullable, raise 403
-            manager = getattr(instance, accessor_name)
-            if not hasattr(manager, 'remove'):
-                raise PermissionDenied('\'%s\' does not allow null values.' % rel.relname)
+        # If the ForeignKey is not nullable, raise 403
+        manager = getattr(instance, accessor_name)
+        if not hasattr(manager, 'remove'):
+            raise PermissionDenied('This field is required.', source={'pointer': rel.relname})
 
-            # check permissions first before assignment
-            for related_object in related:
-                rel.viewset.check_object_permissions(self.request, related_object)
+        # check permissions first before assignment
+        for related_object in related:
+            rel.viewset.check_object_permissions(self.request, related_object)
 
-            manager.remove(*related)
-
-        else:
-            rel.viewset.check_object_permissions(self.request, related)
-            setattr(instance, accessor_name, None)
+        manager.remove(*related)
 
     def set_related(self, rel, instance, related):
+        current = self.get_related_data(rel, instance)
+
         if rel.info.to_many:
-            current = self.get_related_data(rel, instance)
             current = current.exclude(id__in=related)
             self.unlink_related(rel, instance, current)
-        self.link_related(rel, instance, related)
+            self.link_related(rel, instance, related)
+            return
+
+        # handle to-one.
+        rel.viewset.check_object_permissions(self.request, related)
+        accessor_name = self.get_related_accessor_name(rel, instance)
+        try:
+            setattr(instance, accessor_name, related)
+        except ValueError:
+            raise PermissionDenied('This field is required.', source={'pointer': rel.relname})
 
 
 class GenericPolymorphicResourceView(GenericResourceView):

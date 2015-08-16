@@ -103,7 +103,7 @@ class ResourceView(APIView):
             source={'pointer': pointer},
         )
 
-    def validate_identity(self, data, instance):
+    def validate_identity(self, data, instance=None):
         errors = []
 
         # handle reource ID

@@ -2,6 +2,7 @@
 from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
+from json_api import exceptions
 
 
 class CreateResourceMixin(object):
@@ -181,8 +182,20 @@ class UpdateResourceMixin(object):
 
         instance = serializer.save()
 
+        rel_errors = []
         for rel, related in relationships.items():
-            self.set_related(rel, instance, related)
+            try:
+                self.set_related(rel, instance, related)
+            except exceptions.APIError as e:
+                source = e._data.get('source') or {}
+                pointer = '/data/relationships/%s' % (source.get('pointer', ''))
+                source['pointer'] = pointer
+                e._data['source'] = source
+                rel_errors.append(e)
+        if rel_errors:
+            raise exceptions.ErrorList(rel_errors)
+
+        instance.save()
 
         return instance
 
