@@ -48,6 +48,7 @@ class PageLinksMixin(object):
 
 
 class PageNumberPagination(pagination.PageNumberPagination, PageLinksMixin):
+    page_size = 100
 
     @property
     def paginator(self):
