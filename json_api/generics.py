@@ -132,6 +132,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         Returns a resource object for a model instance, in conformance with:
         http://jsonapi.org/format/#document-structure-resource-objects
         """
+
         serializer = self.get_serializer(instance)
         data = OrderedDict((
             ('id', instance.pk),
@@ -444,14 +445,14 @@ class GenericPolymorphicResourceView(GenericResourceView):
         http://jsonapi.org/format/#document-structure-resource-objects
         """
         data = super(GenericPolymorphicResourceView, self).build_resource(instance)
-
         viewset = self.get_subtype_viewset(data['type'])
+
         if not viewset:
             return data
 
-        data['links']['subtype'] = viewset.get_resource_links(instance)['self']
+        sub = viewset.serializer_class.Meta.model.objects.get(pk=instance.pk)
 
-        return data
+        return viewset.build_resource(sub)
 
     def get_subtype_viewset(self, subtype):
         if subtype not in self.subtypes:
