@@ -42,10 +42,10 @@ setup(
     url='https://github.com/ITNG/dj-jsonapi',
     author='Ryan P Kilby',
     author_email='rpkilby@ncsu.edu',
-    install_requires=['djangorestframework>=3.2', ],
+    install_requires=['djangorestframework>=3.2,!=3.2.3,', ],
     packages=find_packages(exclude=('tests', )),
 
-    tests_require=['django', 'djangorestframework>=3.2', ],
+    tests_require=['django', 'djangorestframework>=3.2,!=3.2.3', 'fantasy-database'],
 
     cmdclass={
         'test': Test,
