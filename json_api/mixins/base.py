@@ -50,12 +50,22 @@ class CreateResourceMixin(object):
                 deferred_relationships[rel] = related
             else:
                 rel.viewset.check_object_permissions(self.request, related)
-                relationships[relname] = related
+
+                # reverse relationships need to be deferred, as they cannot be
+                # used during object construction
+                if rel.attname in self.model_info.reverse_relations:
+                    deferred_relationships[rel] = related
+                else:
+                    relationships[rel.attname] = related
 
         instance = serializer.save(**relationships)
 
         for rel, related in deferred_relationships.items():
-            self.link_related(rel, instance, related)
+            self.set_related(rel, instance, related)
+
+            # deferred/reverse to-one relationships need to be saved
+            if not rel.info.to_many:
+                related.save()
 
         return instance
 

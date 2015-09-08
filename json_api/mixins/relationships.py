@@ -44,7 +44,6 @@ class ManageRelationshipMixin(object):
         related = self.get_related_from_data(rel, data)
 
         self.link_related(rel, instance, related)
-        instance.save()
 
     @transaction.atomic
     def perform_relationship_update(self, data):
@@ -53,7 +52,13 @@ class ManageRelationshipMixin(object):
         related = self.get_related_from_data(rel, data)
 
         self.set_related(rel, instance, related)
-        instance.save()
+
+        # Only to-one relationships need to be saved
+        if not rel.info.to_many:
+            if rel.attname in self.model_info.reverse_relations:
+                related.save()
+            else:
+                instance.save()
 
     @transaction.atomic
     def perform_relationship_destroy(self, data):
@@ -62,4 +67,3 @@ class ManageRelationshipMixin(object):
         related = self.get_related_from_data(rel, data)
 
         self.unlink_related(rel, instance, related)
-        instance.save()
