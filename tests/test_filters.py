@@ -13,28 +13,28 @@ factory = APIRequestFactory()
 
 # forward/reverse relationship testing generic views
 class AuthorView(views.ListMixin, views.AuthorView):
-    filter_backends = (filters.RelatedOrderingFilter, )
+    filter_backends = (filters.RelatedOrderingFilter, filters.FieldLookupFilter, )
     ordering_fields = '__all__'
 
     relationships = [rel('books', 'tests.test_filters.BookView', 'book'), ]
 
 
 class CoverView(views.ListMixin, views.CoverView):
-    filter_backends = (filters.RelatedOrderingFilter, )
+    filter_backends = (filters.RelatedOrderingFilter, filters.FieldLookupFilter, )
     ordering_fields = '__all__'
 
     relationships = [rel('book', 'tests.test_filters.BookView'), ]
 
 
 class TagView(views.ListMixin, views.TagView):
-    filter_backends = (filters.RelatedOrderingFilter, )
+    filter_backends = (filters.RelatedOrderingFilter, filters.FieldLookupFilter, )
     ordering_fields = '__all__'
 
     relationships = [rel('books', 'tests.test_filters.BookView', 'book'), ]
 
 
 class BookView(views.ListMixin, views.BookView):
-    filter_backends = (filters.RelatedOrderingFilter, )
+    filter_backends = (filters.RelatedOrderingFilter, filters.FieldLookupFilter, )
     ordering_fields = '__all__'
 
     relationships = [
@@ -291,3 +291,34 @@ class RelatedOrderingFilterInterfaceTests(TestCase):
         self.assertEqual(len(errors), 1)
         self.assertEqual(errors[0]['source']['parameter'], 'sort')
         self.assertIn('author.name', errors[0]['detail'])
+
+
+class FieldLookupFilterInterfaceTests(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        book = models.Book.objects.create(
+            author=models.Author.objects.create(name="Bob Robertson"),
+            cover=models.Cover.objects.create(text="Bleep blep"),
+            title="Ancient Aliens",
+        )
+        book.tags.add(models.Tag.objects.create(text="Historical Fiction"))
+
+        book = models.Book.objects.create(
+            author=models.Author.objects.create(name="Charles Charleston"),
+            cover=models.Cover.objects.create(text="Grwarr"),
+            title="Future Dinosaurs",
+        )
+        book.tags.add(models.Tag.objects.create(text="Science Fiction"))
+
+    def test_lookup_parsing(self):
+        class _BookView(BookView):
+            filter_fields = ['author']
+
+        view = _BookView.as_view()
+        request = factory.get('/', {'filter[author]': 1})
+        response = view(request)
+
+        data = response.data['data']
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['attributes']['title'], "Ancient Aliens")

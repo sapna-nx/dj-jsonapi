@@ -51,6 +51,7 @@ DEFAULTS.update({
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
         'json_api.filters.RelatedOrderingFilter',
+        'json_api.filters.FieldLookupFilter',
     ),
     'ORDERING_PARAM': 'sort',
     'DEFAULT_PAGINATION_CLASS': 'json_api.pagination.PageNumberPagination',

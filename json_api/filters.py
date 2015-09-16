@@ -1,5 +1,7 @@
 
+import re
 from rest_framework.filters import OrderingFilter
+from rest_framework_filters import backends
 from json_api.exceptions import ErrorList, NotFound, ParseError
 from json_api.settings import api_settings
 from json_api.utils import view_meta
@@ -122,3 +124,35 @@ class RelatedOrderingFilter(OrderingFilter):
 
         # ensure fields is within set of all valid fields
         return field not in ordering_fields
+
+
+class FieldLookupFilter(backends.DjangoFilterBackend):
+    """
+    Wraps DRF-filters `DjangoFilterBackend` to support JSON-API compatible query string
+    syntax. The filter backend is agnostic to the format of the lookup syntax, as long as
+    it matches against `filter[lookup]=value`.
+
+    ie,
+        /api/books?filter[author__id__lte]=5
+    """
+    filter_regex = re.compile(r'^filter\[(?P<lookup>.+)\]$')
+
+    def get_filter_class(self, view, queryset=None):
+        """
+        Return the django-filters `FilterSet` used to filter the queryset.
+        """
+        filter_class = super(FieldLookupFilter, self).get_filter_class(view, queryset)
+        filter_regex = self.filter_regex
+
+        if filter_class:
+
+            class JsonApiFilterSet(filter_class):
+                def __init__(self, data=None, queryset=None, prefix=None, strict=None):
+                    filters = {filter_regex.match(p): v for p, v in data.items()}
+                    filters = {p.group('lookup'): v for p, v in filters.items() if p is not None}
+
+                    super(JsonApiFilterSet, self).__init__(filters, queryset, prefix, strict)
+
+            return JsonApiFilterSet
+
+        return None
