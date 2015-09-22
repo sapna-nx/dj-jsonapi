@@ -84,15 +84,16 @@ class ListResourceMixin(object):
         queryset = self.filter_queryset(self.get_queryset())
 
         include_paths = self.get_include_paths(queryset)
+        linkages = self.group_include_paths(include_paths).keys()
 
         page = self.paginate_queryset(queryset)
         self.page = page
         if page is not None:
-            data = [self.build_resource(instance) for instance in page]
+            data = [self.build_resource(instance, linkages) for instance in page]
             included_data = self.get_included_data(page, include_paths).values()
 
         else:
-            data = [self.build_resource(instance) for instance in queryset]
+            data = [self.build_resource(instance, linkages) for instance in queryset]
             included_data = self.get_included_data(queryset, include_paths).values()
 
         links = self.get_default_links()
@@ -118,11 +119,12 @@ class RetrieveResourceMixin(object):
         # TODO:
         # queryset optimization hooks into `get_object()`
         instance = self.get_object()
-        paths = self.get_include_paths(self.get_queryset())
+        include_paths = self.get_include_paths(self.get_queryset())
+        linkages = self.group_include_paths(include_paths).keys()
 
         links = self.get_default_links()
-        data = self.build_resource(instance)
-        included_data = self.get_included_data(instance, paths).values()
+        data = self.build_resource(instance, linkages)
+        included_data = self.get_included_data(instance, include_paths).values()
 
         body = {
             'links': links,

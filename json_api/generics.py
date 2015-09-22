@@ -127,7 +127,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
     def get_resource_meta(self, instance):
         pass
 
-    def build_resource(self, instance):
+    def build_resource(self, instance, linkages=None):
         """
         Returns a resource object for a model instance, in conformance with:
         http://jsonapi.org/format/#document-structure-resource-objects
@@ -139,7 +139,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             ('type', self.get_resource_type(instance)),
             ('links', self.get_resource_links(instance)),
             ('attributes', serializer.data),
-            ('relationships', self.get_relationship_objects(instance)),
+            ('relationships', self.get_relationship_objects(instance, linkages)),
             ('meta', self.get_resource_meta(instance)),
         ))
 
@@ -234,7 +234,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         return rel_object
 
-    def get_relationship_objects(self, instance):
+    def get_relationship_objects(self, instance, linkages=None):
         """
         Returns a dictionary of {relname: relationship object}
         This is defined by: http://jsonapi.org/format/#document-structure-links
@@ -262,10 +262,13 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         if not self.relationships:
             return None
 
+        if linkages is None:
+            linkages = []
+
         return OrderedDict([(
             rel.relname,
             self.build_relationship_object(
-                rel, instance, not rel.info.to_many
+                rel, instance, rel.relname in linkages
             )
         ) for rel in self.relationships])
 
@@ -383,6 +386,14 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         if self.includer is None:
             return None
         return self.includer.get_included_data(data, paths, self)
+
+    def group_include_paths(self, paths):
+        """
+        Group paths by their base path.
+        """
+        if self.includer is None:
+            return None
+        return self.includer.group_include_paths(paths)
 
     def link_related(self, rel, instance, related):
         if not rel.info.to_many:

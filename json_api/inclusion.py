@@ -39,6 +39,9 @@ class BaseInclusion(object):
     def get_included_data(self, data, paths):  # pragma: no cover
         raise NotImplementedError('get_included_data() must be implemented.')
 
+    def group_include_paths(self, paths):  # pragma: no cover
+        raise NotImplementedError('group_include_paths() must be implemented.')
+
 
 class RelatedResourceInclusion(BaseInclusion):
     """
@@ -98,6 +101,32 @@ class RelatedResourceInclusion(BaseInclusion):
 
         # No paths were included, use defaults
         return self.get_default_include_paths(view)
+
+    def group_include_paths(self, paths):
+        """
+        Group related paths into a map or {rel: [subpaths]}
+
+        ex::
+
+            ['a.a', 'a.b', 'a.c', 'b', b.a']
+            into
+            {'a': ['a', 'b', 'c'], 'b': ['a']}
+
+        """
+        if not paths:
+            return {}
+
+        rels = OrderedDict()
+
+        for path in paths:
+            parts = path.split(self.include_delimiter, 1)
+            rel = parts[0]
+            subpath = parts[1:]  # list of one paths
+
+            rels.setdefault(rel, [])
+            rels[rel] += subpath
+
+        return rels
 
     def get_default_include_paths(self, view):
         # An endpoint MAY return resources related to the primary data by default.
@@ -175,29 +204,6 @@ class RelatedResourceInclusion(BaseInclusion):
 
         return include_rels
 
-    def aggregate_rels(self, paths):
-        """
-        Covert a map of related paths into a dictionary or {rels: [subpaths]}
-
-        ex::
-
-            ['a.a', 'a.b', 'a.c', 'b', b.a']
-            into
-            {'a': ['a', 'b', 'c'], 'b': ['a']}
-
-        """
-        rels = OrderedDict()
-
-        for path in paths:
-            parts = path.split(self.include_delimiter, 1)
-            rel = parts[0]
-            subpath = parts[1:]  # list of one paths
-
-            rels.setdefault(rel, [])
-            rels[rel] += subpath
-
-        return rels
-
     def get_included_data(self, data, paths, view):
         # base case - no paths, no included data
         if not paths:
@@ -208,9 +214,9 @@ class RelatedResourceInclusion(BaseInclusion):
 
         included_data = OrderedDict()
 
-        aggregated_rels = self.aggregate_rels(paths)
+        grouped_paths = self.group_include_paths(paths)
         for instance in data:
-            for relname, subpaths in aggregated_rels.items():
+            for relname, subpaths in grouped_paths.items():
                 rel = view.get_relationship(relname)
 
                 # use the related view to access the included data.
@@ -221,8 +227,11 @@ class RelatedResourceInclusion(BaseInclusion):
                 elif not isinstance(related_data, Iterable):
                     related_data = [related_data]
 
+                # Determine linkages from remaining subpaths
+                linkages = self.group_include_paths(subpaths).keys()
+
                 # use the related view to go ahead and build the resource objects
-                resource_objects = [rel.viewset.build_resource(inst) for inst in related_data]
+                resource_objects = [rel.viewset.build_resource(inst, linkages) for inst in related_data]
 
                 # covert to ordered dict of {identity: object}
                 resource_objects = OrderedDict((

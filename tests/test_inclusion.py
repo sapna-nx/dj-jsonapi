@@ -61,21 +61,21 @@ class RelatedResourceInclusionTests(UTestCase):
     def setUp(self):
         self.includer = inclusion.RelatedResourceInclusion()
 
-    def test_aggregate_rels(self):
+    def test_group_include_paths(self):
         i = self.includer
 
         self.assertEqual(
-            i.aggregate_rels(['a', 'b', 'c']),
+            i.group_include_paths(['a', 'b', 'c']),
             {'a': [], 'b': [], 'c': []}
         )
 
         self.assertEqual(
-            i.aggregate_rels(['a', 'a.b', 'a.c', 'b']),
+            i.group_include_paths(['a', 'a.b', 'a.c', 'b']),
             {'a': ['b', 'c'], 'b': []}
         )
 
         self.assertEqual(
-            i.aggregate_rels(['a', 'a.b', 'a.c.d', 'b']),
+            i.group_include_paths(['a', 'a.b', 'a.c.d', 'b']),
             {'a': ['b', 'c.d'], 'b': []}
         )
 
