@@ -9,6 +9,7 @@ from rest_framework.generics import GenericAPIView
 from json_api.utils import model_meta, import_class
 from json_api.utils.reverse import reverse
 from json_api.utils.rels import model_rel
+from json_api.utils.urls import unquote_brackets
 from json_api.exceptions import PermissionDenied
 from json_api.settings import api_settings
 from json_api import serializers, views
@@ -96,6 +97,8 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         if getattr(self, 'page', None):
             links.update(self.paginator.get_links())
 
+        links = {name: unquote_brackets(link) for name, link in links.items()}
+
         return links
 
     def get_resource_type(self, model=None):
@@ -122,6 +125,9 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         ))
 
         links.update(self.get_resource_actions(instance.pk))
+
+        links = {name: unquote_brackets(link) for name, link in links.items()}
+
         return links
 
     def get_resource_meta(self, instance):
