@@ -1,7 +1,8 @@
 
 import re
 from rest_framework.filters import OrderingFilter
-from rest_framework_filters import backends
+from rest_framework_filters import backends, filterset
+from django_filters.filterset import STRICTNESS
 from json_api.exceptions import ErrorList, NotFound, ParseError
 from json_api.settings import api_settings
 from json_api.utils import view_meta
@@ -156,3 +157,7 @@ class FieldLookupFilter(backends.DjangoFilterBackend):
             return JsonApiFilterSet
 
         return None
+
+
+class FilterSet(filterset.FilterSet):
+    strict = STRICTNESS.RAISE_VALIDATION_ERROR
