@@ -3,7 +3,8 @@ from rest_framework import parsers
 
 
 class APIParser(parsers.JSONParser):
-    pass
+
+    media_type = 'application/vnd.api+json'
 
 
 class FormParser(parsers.FormParser):

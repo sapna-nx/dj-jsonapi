@@ -55,7 +55,7 @@ DEFAULTS.update({
     ),
     'ORDERING_PARAM': 'sort',
     'DEFAULT_PAGINATION_CLASS': 'json_api.pagination.PageNumberPagination',
-    # 'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'json_api.negotiation.Negotiator',
+    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'json_api.negotiation.APINegotiation',
     # 'DEFAULT_METADATA_CLASS': 'json_api.metadata.APIMetadata',
     'EXCEPTION_HANDLER': 'json_api.exceptions.handler',
 })
