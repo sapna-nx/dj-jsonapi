@@ -2,7 +2,6 @@
 from rest_framework.negotiation import DefaultContentNegotiation
 from json_api.parsers import APIParser
 from json_api.renderers import APIRenderer
-from json_api import exceptions
 
 
 class APINegotiation(DefaultContentNegotiation):
@@ -27,6 +26,7 @@ class APINegotiation(DefaultContentNegotiation):
 
         if any(a.startswith(APIRenderer.media_type) for a in accepts):
             if APIRenderer.media_type not in accepts:
+                from json_api import exceptions
                 raise exceptions.NotAcceptable()
 
         return super(APINegotiation, self).select_renderer(request, renderers, format_suffix)

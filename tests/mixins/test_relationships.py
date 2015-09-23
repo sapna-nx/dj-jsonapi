@@ -36,7 +36,7 @@ class ToOneRelationships(TestCase):
         response = self.client.patch(
             reverse('book-relationship', kwargs={'pk': 11, 'relname': 'series'}),
             data=json.dumps({"data": {"type": "series", "id": 1}}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
 
         # expect HTTP 204
@@ -60,7 +60,7 @@ class ToOneRelationships(TestCase):
         response = self.client.patch(
             reverse('book-relationship', kwargs={'pk': 1, 'relname': 'series'}),
             data=json.dumps({"data": None}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
 
         # expect HTTP 204
@@ -83,7 +83,7 @@ class ToOneRelationships(TestCase):
         response = self.client.patch(
             reverse('book-relationship', kwargs={'pk': 1, 'relname': 'series'}),
             data=json.dumps({"data": {"type": "series", "id": 2}}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
 
         # expect HTTP 204
@@ -108,7 +108,7 @@ class ToOneRelationships(TestCase):
         response = self.client.patch(
             reverse('book-relationship', kwargs={'pk': 1, 'relname': 'author'}),
             data=json.dumps({"data": None}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(len(response.data['errors']), 1)
@@ -129,14 +129,14 @@ class ToOneRelationships(TestCase):
         # POST
         response = self.client.post(
             reverse('book-relationship', kwargs={'pk': 1, 'relname': 'author'}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
         # DELETE
         response = self.client.delete(
             reverse('book-relationship', kwargs={'pk': 1, 'relname': 'author'}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -164,7 +164,7 @@ class ToManyRelationships(TestCase):
             response = method(
                 reverse('book-relationship', kwargs={'pk': 1, 'relname': 'chapters'}),
                 data=json.dumps({"data": None}),
-                content_type='application/json',
+                content_type='application/vnd.api+json',
             )
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(len(response.data['errors']), 1)
@@ -186,7 +186,7 @@ class ToManyRelationships(TestCase):
             response = method(
                 reverse('series-relationship', kwargs={'pk': 1, 'relname': 'books'}),
                 data=json.dumps({"data": []}),
-                content_type='application/json',
+                content_type='application/vnd.api+json',
             )
             self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -198,7 +198,7 @@ class ToManyRelationships(TestCase):
         response = self.client.patch(
             reverse('series-relationship', kwargs={'pk': 1, 'relname': 'books'}),
             data=json.dumps({"data": []}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -219,7 +219,7 @@ class ToManyRelationships(TestCase):
         response = self.client.delete(
             reverse('author-relationship', kwargs={'pk': 1, 'relname': 'books'}),
             data=json.dumps({"data": [{'type': 'book', 'id': 11}]}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(len(response.data['errors']), 1)
@@ -228,7 +228,7 @@ class ToManyRelationships(TestCase):
         response = self.client.patch(
             reverse('author-relationship', kwargs={'pk': 1, 'relname': 'books'}),
             data=json.dumps({"data": [{'type': 'book', 'id': 11}]}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(len(response.data['errors']), 1)
@@ -251,7 +251,7 @@ class ToManyRelationships(TestCase):
         response = self.client.patch(
             reverse('book-relationship', kwargs={'pk': 11, 'relname': 'series'}),
             data=json.dumps({"data": {"type": "series", "id": 1}}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
 
         # expect HTTP 204
@@ -280,7 +280,7 @@ class ToManyRelationships(TestCase):
         response = self.client.patch(
             reverse('series-relationship', kwargs={'pk': 1, 'relname': 'books'}),
             data=json.dumps({"data": [{'type': 'book', 'id': 11}]}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -309,7 +309,7 @@ class ToManyRelationships(TestCase):
                 {'type': 'book', 'id': 1}, {'type': 'book', 'id': 2},
                 {'type': 'book', 'id': 3}, {'type': 'book', 'id': 11},
             ]}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -342,7 +342,7 @@ class ToManyRelationships(TestCase):
                 {'type': 'book', 'id': 2},
                 {'type': 'book', 'id': 3},
             ]}),
-            content_type='application/json',
+            content_type='application/vnd.api+json',
         )
 
         # expect HTTP 204
