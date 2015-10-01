@@ -148,11 +148,11 @@ class FieldLookupFilter(backends.DjangoFilterBackend):
         if filter_class:
 
             class JsonApiFilterSet(filter_class):
-                def __init__(self, data=None, queryset=None, prefix=None, strict=None):
+                def __init__(self, data=None, queryset=None, **kwargs):
                     filters = {filter_regex.match(p): v for p, v in data.items()}
                     filters = {p.group('lookup'): v for p, v in filters.items() if p is not None}
 
-                    super(JsonApiFilterSet, self).__init__(filters, queryset, prefix, strict)
+                    super(JsonApiFilterSet, self).__init__(filters, queryset, **kwargs)
 
             return JsonApiFilterSet
 
