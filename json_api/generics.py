@@ -456,12 +456,12 @@ class GenericPolymorphicResourceView(GenericResourceView):
 
     # todo: allow inclusion/selection of subtypes
 
-    def build_resource(self, instance):
+    def build_resource(self, instance, linkages=None):
         """
         Returns a resource object for a model instance, in conformance with:
         http://jsonapi.org/format/#document-structure-resource-objects
         """
-        data = super(GenericPolymorphicResourceView, self).build_resource(instance)
+        data = super(GenericPolymorphicResourceView, self).build_resource(instance, linkages)
         viewset = self.get_subtype_viewset(data['type'])
 
         if not viewset:
@@ -469,7 +469,7 @@ class GenericPolymorphicResourceView(GenericResourceView):
 
         sub = viewset.serializer_class.Meta.model.objects.get(pk=instance.pk)
 
-        return viewset.build_resource(sub)
+        return viewset.build_resource(sub, linkages)
 
     def get_subtype_viewset(self, subtype):
         if subtype not in self.subtypes:
