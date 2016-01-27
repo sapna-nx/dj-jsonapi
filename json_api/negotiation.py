@@ -13,7 +13,11 @@ class APINegotiation(DefaultContentNegotiation):
         # a request specifies the header Content-Type: application/vnd.api+json
         # with any media type parameters.
         if isinstance(parser, APIParser):
-            if parser.media_type != request.content_type:
+
+            # This check needs to be done because some browsers append charset
+            # information automatically to the Content-Type header
+            content_types = [ct.strip() for ct in request.content_type.split(';')]
+            if parser.media_type not in content_types:
                 return None
 
         return parser
