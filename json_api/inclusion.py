@@ -1,6 +1,7 @@
 
 from collections import OrderedDict, Iterable
 from django.utils import six
+from django.utils.functional import LazyObject
 from json_api.exceptions import ErrorList, NotFound, ParseError
 from json_api.settings import api_settings
 from json_api.utils import view_meta
@@ -209,7 +210,8 @@ class RelatedResourceInclusion(BaseInclusion):
         if not paths:
             return {}
 
-        if not isinstance(data, Iterable):
+        # LazyObjects in Django 1.9 provide an __iter__ method
+        if not isinstance(data, Iterable) or isinstance(data, LazyObject):
             data = [data]
 
         included_data = OrderedDict()
