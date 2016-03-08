@@ -138,25 +138,19 @@ class FieldLookupFilter(backends.DjangoFilterBackend):
     """
     filter_regex = re.compile(r'^filter\[(?P<lookup>.+)\]$')
 
-    def get_filter_class(self, view, queryset=None):
-        """
-        Return the django-filters `FilterSet` used to filter the queryset.
-        """
-        filter_class = super(FieldLookupFilter, self).get_filter_class(view, queryset)
+    def filter_queryset(self, request, queryset, view):
+        filter_class = self.get_filter_class(view, queryset)
         filter_regex = self.filter_regex
 
+        filters = {filter_regex.match(p): v for p, v in request.query_params.items()}
+        filters = {p.group('lookup'): v for p, v in filters.items() if p is not None}
+
         if filter_class:
+            if hasattr(filter_class, 'get_subset'):
+                filter_class = filter_class.get_subset(filters)
+            return filter_class(filters, queryset=queryset).qs
 
-            class JsonApiFilterSet(filter_class):
-                def __init__(self, data=None, queryset=None, **kwargs):
-                    filters = {filter_regex.match(p): v for p, v in data.items()}
-                    filters = {p.group('lookup'): v for p, v in filters.items() if p is not None}
-
-                    super(JsonApiFilterSet, self).__init__(filters, queryset, **kwargs)
-
-            return JsonApiFilterSet
-
-        return None
+        return queryset
 
 
 class FilterSet(filterset.FilterSet):
