@@ -59,6 +59,7 @@ class RelatedOrderingFilterTests(UTestCase):
 
         view = BookView()
 
+        self.assertEqual(self.filter.translate_field('id', view), 'pk')
         self.assertEqual(self.filter.translate_field('author', view), 'author')
         self.assertEqual(self.filter.translate_field('-author', view), '-author')
         self.assertEqual(self.filter.translate_field('author.name', view), 'author__name')

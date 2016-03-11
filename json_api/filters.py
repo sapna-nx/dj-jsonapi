@@ -42,9 +42,12 @@ class RelatedOrderingFilter(OrderingFilter):
             rel = view.get_relationship(field)
             related = self.translate_field(related, rel.viewset)
 
-        # translate from resource name to model attname.
-        fields_map = view_meta.get_field_attnames(view)
-        field = fields_map[field]
+        if field != 'id':
+            # translate from resource name to model attname.
+            fields_map = view_meta.get_field_attnames(view)
+            field = fields_map[field]
+        else:
+            field = 'pk'
 
         # serializer source may be '.' delimited across relationships
         field = field.replace('.', '__')
