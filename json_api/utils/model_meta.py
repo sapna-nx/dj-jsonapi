@@ -41,14 +41,9 @@ def _translate_reverse_relationships(opts, reverse_relations):
     those keys with the rel's `name` property. This allows us to later lookup
     the relationship with `opts.get_field()`.
     """
-    related_objects = (
-        opts.get_all_related_objects() +
-        opts.get_all_related_many_to_many_objects()
-    )
-
     return OrderedDict([(
         relation.name, reverse_relations.pop(relation.get_accessor_name())
-    ) for relation in related_objects])
+    ) for relation in opts.related_objects])
 
 
 def verbose_name(model):

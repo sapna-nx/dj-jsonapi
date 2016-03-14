@@ -271,10 +271,7 @@ class ToManyRelationships(TestCase):
         lotr = models.Series.objects.get(pk=1)
         self.assertEqual(lotr.title, 'The Lord of the Rings')
         self.assertEqual(lotr.book_set.count(), 3)
-        self.assertItemsEqual(
-            lotr.book_set.values_list('id', flat=True),
-            [1, 2, 3]
-        )
+        self.assertSequenceEqual(lotr.book_set.values_list('id', flat=True), [1, 2, 3])
 
         # But hear me out, what if... we turned The Hobbit into a trilogy
         response = self.client.patch(
@@ -287,7 +284,7 @@ class ToManyRelationships(TestCase):
         # The LotR should now contain only The Hobbit
         lotr = models.Series.objects.get(pk=1)
         self.assertEqual(lotr.book_set.count(), 1)
-        self.assertItemsEqual(lotr.book_set.values_list('id', flat=True), [11])
+        self.assertSequenceEqual(lotr.book_set.values_list('id', flat=True), [11])
 
     def test_reset_relationship(self):
         """
@@ -297,10 +294,7 @@ class ToManyRelationships(TestCase):
         # Tolkien has written 4 books
         tolkien = models.Author.objects.get(pk=1)
         self.assertEqual(tolkien.book_set.count(), 4)
-        self.assertItemsEqual(
-            tolkien.book_set.values_list('id', flat=True),
-            [1, 2, 3, 11]
-        )
+        self.assertSequenceEqual(tolkien.book_set.values_list('id', flat=True), [1, 2, 3, 11])
 
         # Set the written works to his current written works
         response = self.client.patch(
@@ -316,10 +310,7 @@ class ToManyRelationships(TestCase):
         # Tolkien should still have 4 books
         tolkien = models.Author.objects.get(pk=1)
         self.assertEqual(tolkien.book_set.count(), 4)
-        self.assertItemsEqual(
-            tolkien.book_set.values_list('id', flat=True),
-            [1, 2, 3, 11]
-        )
+        self.assertSequenceEqual(tolkien.book_set.values_list('id', flat=True), [1, 2, 3, 11])
 
     def test_remove_from_relationship(self):
         """
@@ -329,10 +320,7 @@ class ToManyRelationships(TestCase):
         lotr = models.Series.objects.get(pk=1)
         self.assertEqual(lotr.title, 'The Lord of the Rings')
         self.assertEqual(lotr.book_set.count(), 3)
-        self.assertItemsEqual(
-            lotr.book_set.values_list('id', flat=True),
-            [1, 2, 3]
-        )
+        self.assertSequenceEqual(lotr.book_set.values_list('id', flat=True), [1, 2, 3])
 
         # Remove the books from the series
         response = self.client.delete(
