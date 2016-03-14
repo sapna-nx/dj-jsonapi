@@ -1,4 +1,5 @@
 
+from collections import OrderedDict
 from django.core.exceptions import ImproperlyConfigured
 
 
@@ -13,18 +14,18 @@ def get_attribute_attnames(view):
             "does not have a 'serializer_class'."
         )
 
-    return {
-        field_name: field.source
+    return OrderedDict(
+        (field_name, field.source)
         for field_name, field in serializer_class().fields.items()
         if not getattr(field, 'write_only', False)
-    }
+    )
 
 
 def get_rel_attnames(view):
     """
     Return a map of {resource rel name: model attname} for a view.
     """
-    return {rel.relname: rel.attname for rel in view.relationships}
+    return OrderedDict((rel.relname, rel.attname) for rel in view.relationships)
 
 
 def get_field_attnames(view):

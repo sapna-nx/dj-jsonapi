@@ -190,7 +190,7 @@ class RelatedResourceInclusion(BaseInclusion):
 
         """
         include_rels = getattr(view, 'include_rels', self.include_rels)
-        all_rels = view_meta.get_rel_attnames(view).keys()
+        all_rels = list(view_meta.get_rel_attnames(view).keys())
 
         if include_rels is None:
             include_rels = []
@@ -230,7 +230,7 @@ class RelatedResourceInclusion(BaseInclusion):
                     related_data = [related_data]
 
                 # Determine linkages from remaining subpaths
-                linkages = self.group_include_paths(subpaths).keys()
+                linkages = list(self.group_include_paths(subpaths).keys())
 
                 # use the related view to go ahead and build the resource objects
                 resource_objects = [rel.viewset.build_resource(inst, linkages) for inst in related_data]

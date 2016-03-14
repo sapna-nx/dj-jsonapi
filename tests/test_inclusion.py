@@ -1,6 +1,6 @@
 
 from unittest import TestCase as UTestCase
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.conf.urls import url
 from rest_framework.test import APIRequestFactory
 # from rest_framework import serializers
@@ -96,16 +96,10 @@ class RelatedResourceInclusionTests(UTestCase):
         self.assertEqual(self.includer.get_includable_rels(view), [])
 
         view = AllFields()
-        self.assertItemsEqual(
-            self.includer.get_includable_rels(view),
-            ['author', 'comments']
-        )
+        self.assertEqual(self.includer.get_includable_rels(view), ['author', 'comments'])
 
         view = FieldSubset()
-        self.assertItemsEqual(
-            self.includer.get_includable_rels(view),
-            ['author']
-        )
+        self.assertEqual(self.includer.get_includable_rels(view), ['author'])
 
         view = InvalidFields()
         with self.assertRaisesRegexp(AssertionError, 'must be valid resource relnames'):
@@ -173,9 +167,8 @@ class RelatedResourceInclusionTests(UTestCase):
         self.assertTrue(self.includer.is_invalid_include('article.title', view))
 
 
+@override_settings(ROOT_URLCONF='tests.test_inclusion')
 class RelatedResourceInclusionInterfaceTests(TestCase):
-
-    urls = 'tests.test_inclusion'
 
     @classmethod
     def setUpTestData(cls):

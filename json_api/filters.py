@@ -68,7 +68,7 @@ class RelatedOrderingFilter(OrderingFilter):
 
         """
         ordering_fields = getattr(view, 'ordering_fields', self.ordering_fields)
-        all_fields = view_meta.get_field_attnames(view).keys()
+        all_fields = list(view_meta.get_field_attnames(view).keys())
 
         if ordering_fields is None:
             ordering_fields = []

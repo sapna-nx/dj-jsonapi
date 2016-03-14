@@ -111,14 +111,10 @@ class APIError(exceptions.APIException):
     @property
     def data(self):
         error = self._data.copy()
-
         error['detail'] = self.detail
 
-        for key, value in error.items():
-            if value is None:
-                del error[key]
-
-        return error
+        # filter out empty values
+        return OrderedDict((k, v) for k, v in error.items() if v)
 
 
 class _Conflict(exceptions.APIException):

@@ -149,11 +149,8 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             ('meta', self.get_resource_meta(instance)),
         ))
 
-        for key, value in data.items():
-            if not value:
-                del data[key]
-
-        return data
+        # filter out empty values
+        return OrderedDict((k, v) for k, v in data.items() if v)
 
     def build_resource_identifier(self, instance):
         """

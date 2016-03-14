@@ -105,7 +105,7 @@ class ListResourceMixin(object):
         }
 
         if included_data:
-            body['included'] = included_data
+            body['included'] = list(included_data)
 
         response_data = self.build_response_body(**body)
         return Response(response_data)
@@ -132,7 +132,7 @@ class RetrieveResourceMixin(object):
         }
 
         if included_data:
-            body['included'] = included_data
+            body['included'] = list(included_data)
 
         response_data = self.build_response_body(**body)
         return Response(response_data)

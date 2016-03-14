@@ -1,0 +1,33 @@
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+
+sudo: false
+
+env:
+  - DJANGO="https://github.com/django/django/archive/master.tar.gz" REST_FRAMEWORK="https://github.com/tomchristie/django-rest-framework/archive/master.zip"
+  - DJANGO="django>=1.9.0,<1.10.0" REST_FRAMEWORK="djangorestframework>=3.3,<3.4"
+  - DJANGO="django>=1.8.0,<1.9.0" REST_FRAMEWORK="djangorestframework>=3.3,<3.4"
+  - DJANGO="django>=1.8.0,<1.9.0" REST_FRAMEWORK="djangorestframework>=3.2,<3.3"
+
+install:
+  - travis_retry pip install $DJANGO $REST_FRAMEWORK coverage
+  - travis_retry pip install .
+
+script:
+  - coverage run setup.py test -a "-v 2"
+  - coverage report
+
+after_success:
+  - pip install codecov
+  - codecov
+
+notifications:
+  email: false
+
+matrix:
+  allow_failures:
+    - env: DJANGO="https://github.com/django/django/archive/master.tar.gz" REST_FRAMEWORK="https://github.com/tomchristie/django-rest-framework/archive/master.zip"
+  fast_finish: true

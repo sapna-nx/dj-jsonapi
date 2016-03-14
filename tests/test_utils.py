@@ -55,14 +55,14 @@ class TestModelMeta(TestCase):
         from rest_framework.utils.model_meta import get_field_info
         info = get_field_info(Related)
 
-        self.assertEqual(info.reverse_relations.keys(), ['otherrelated_set'])
-        self.assertEqual(info.relations.keys(), ['parent', 'otherrelated_set'])
+        self.assertEqual(list(info.reverse_relations.keys()), ['otherrelated_set'])
+        self.assertEqual(list(info.relations.keys()), ['parent', 'otherrelated_set'])
 
     def test_name_translation(self):
         info = get_field_info(Related)
 
-        self.assertEqual(info.reverse_relations.keys(), ['otherrelated'])
-        self.assertEqual(info.relations.keys(), ['parent', 'otherrelated'])
+        self.assertEqual(list(info.reverse_relations.keys()), ['otherrelated'])
+        self.assertEqual(list(info.relations.keys()), ['parent', 'otherrelated'])
 
 
 class TestRels(UTestCase):

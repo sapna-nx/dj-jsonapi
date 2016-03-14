@@ -102,13 +102,13 @@ class RelatedOrderingFilterTests(UTestCase):
         self.assertEqual(self.filter.get_ordering_fields(view), [])
 
         view = AllFields()
-        self.assertItemsEqual(
+        self.assertSequenceEqual(
             self.filter.get_ordering_fields(view),
-            ['author', 'tags', 'cover', 'title']
+            ['title', 'author', 'cover', 'tags']
         )
 
         view = FieldSubset()
-        self.assertItemsEqual(
+        self.assertSequenceEqual(
             self.filter.get_ordering_fields(view),
             ['author', 'title']
         )
