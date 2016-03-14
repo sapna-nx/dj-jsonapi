@@ -16,6 +16,8 @@ class rel(namedtuple('Relationship', ['relname', 'viewset', 'attname'])):
               Defaults to relname if not provided.
 
     """
+    __slots__ = ()
+
     def __new__(cls, relname, viewset, attname=None):
 
         if attname is None:
@@ -39,6 +41,8 @@ class model_rel(namedtuple('ResolvedModelRelationship', ['relname', 'attname', '
     *request* The origin request. This is attached to the viewset after instantiation.
 
     """
+    __slots__ = ()
+
     def __new__(cls, relname, attname, viewset, info, request):
         if isinstance(viewset, six.string_types):
             viewset = import_class(viewset)
