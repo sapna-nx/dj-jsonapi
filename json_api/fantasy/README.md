@@ -16,7 +16,6 @@ if TESTING:
     # eventually, fantasy should be moved out of this project
     INSTALLED_APPS += (
         'django_fantasy',
-        'json_api.fantasy',
     )
 
 ...
