@@ -1,6 +1,5 @@
 
 from collections import OrderedDict
-from django.utils.functional import cached_property
 from rest_framework.request import Request
 from rest_framework.views import APIView
 from json_api.utils.reverse import reverse
@@ -30,16 +29,46 @@ class ResourceView(APIView):
             return request
         return super(ResourceView, self).initialize_request(request, *args, **kwargs)
 
+    # Blegh - this is a bit gross. We need to determine the requested resource
+    # type so that the request can be re-dispatched to the appropriate subtype
+    # view (if applicable). However,
+    # - we cannot entirely rely on get_resource(), as this only works for
+    #   existing instances. eg, POSTs would fail as their no resource yet.
+    # - we cannot entirely rely on the incoming {data: type: ""}, as,
+    #   - it's not always present (GET/DELETE)
+    #   - it may represent a different resource (related resource data)
+    def _get_requested_type(self):
+        # try getting the resource as most requests are operating on an
+        # existing resource.
+        try:
+            resource = self.get_resource()
+        except:
+            resource = None
+
+        if resource:
+            return self.get_resource_type(resource)
+
+        # try to get {data: type: ""} from the request's data.
+        if 'data' in self.request.data and 'type' in self.request.data['data']:
+            return self.request.data['data']['type']
+
     # Note: A caveat of this implementation is that the request is initialized
     # in the primary ResourceView and is passed to the dispatch method of the
     # heterogenous type's view. It is not entirely clear if this is desirable.
-    def distpach(self, request, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
         request = self.initialize_request(request, *args, **kwargs)
-        subtype = self.get_subtypes().get(request.data.get('type'))
-        if subtype:
-            return subtype.viewset.distpach(self, request, *args, **kwargs)
+        self.request = request
 
-        return super(ResourceView, )
+        reqtype = self._get_requested_type()
+        subtype = self.get_subtypes().get(reqtype) if reqtype else None
+        if subtype is not None:
+            view_class = subtype.viewset.__class__
+            view = view_class.as_view(self.action_map)
+            return view(request, *args, **kwargs)
+
+        return super(ResourceView, self).dispatch(request, *args, **kwargs)
 
     def get_primary_type(self):
         """
@@ -180,7 +209,7 @@ class ResourceView(APIView):
         if 'type' not in data:
             errors.append(exceptions.ParseError('Resource type not specified.'))
 
-        if data['type'] != self.get_primary_type() or data['type'] in self.get_subtypes():
+        if not (data['type'] == self.get_primary_type() or data['type'] in self.get_subtypes()):
             raise exceptions.Conflict('Resource type not accepted.')
 
         if instance:
@@ -232,6 +261,9 @@ class ResourceView(APIView):
         raise exceptions.NotFound()
 
     # Resource building methods
+
+    def get_resource(self):
+        raise NotImplementedError('`get_resource()` must be implemented.')
 
     def get_resource_id(self, instance):
         raise NotImplementedError('`get_resource_id()` must be implemented.')

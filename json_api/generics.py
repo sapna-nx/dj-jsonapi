@@ -110,6 +110,9 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         model = self.get_queryset().model
         return self.get_resource_type(model)
 
+    def get_resource(self):
+        return self.get_object()
+
     def get_resource_id(self, instance):
         return getattr(instance, self.lookup_field)
 
