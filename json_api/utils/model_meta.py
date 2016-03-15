@@ -52,4 +52,4 @@ def verbose_name(model):
     if model._deferred:
         return verbose_name(opts.proxy_for_model)
 
-    return opts.verbose_name
+    return opts.verbose_name.lower()

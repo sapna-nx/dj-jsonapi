@@ -12,9 +12,9 @@ def import_class(path):
         import_class('package.module:ClassName')
     """
     if ':' in path:
-        module_path, class_name = path.split(':')
+        module_path, class_name = str(path).split(':')
     else:
-        module_path, class_name = path.rsplit('.', 1)
+        module_path, class_name = str(path).rsplit('.', 1)
 
     module = __import__(module_path, fromlist=[class_name], level=0)
     return getattr(module, class_name)
