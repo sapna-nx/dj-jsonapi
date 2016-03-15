@@ -7,25 +7,26 @@ from json_api.exceptions import MethodNotAllowed
 
 class RetrieveRelationshipMixin(object):
     def retrieve_relationship(self, request, pk, relname, *args, **kwargs):
-        instance = self.get_object()
         rel = self.get_relationship(relname)
+        instance = self.get_object()
         response_data = self.build_relationship_object(rel, instance, include_linkage=True)
         return Response(response_data)
 
 
 class ManageRelationshipMixin(object):
     def create_relationship(self, request, pk, relname, *args, **kwargs):
-        rel = self.get_relationship()
+        rel = self.get_relationship(relname)
         if not rel.info.to_many:
             raise MethodNotAllowed(request.method)
 
         data = self.get_data(request.data)
-        self.perform_relationship_create(data)
+        self.perform_relationship_create(rel, data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def update_relationship(self, request, pk, relname, *args, **kwargs):
+        rel = self.get_relationship(relname)
         data = self.get_data(request.data)
-        self.perform_relationship_update(data)
+        self.perform_relationship_update(rel, data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def destroy_relationship(self, request, pk, relname, *args, **kwargs):
@@ -34,21 +35,19 @@ class ManageRelationshipMixin(object):
             raise MethodNotAllowed(request.method)
 
         data = self.get_data(request.data)
-        self.perform_relationship_destroy(data)
+        self.perform_relationship_destroy(rel, data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @transaction.atomic
-    def perform_relationship_create(self, data):
+    def perform_relationship_create(self, rel, data):
         instance = self.get_object()
-        rel = self.get_relationship()
         related = self.get_related_from_data(rel, data)
 
         self.link_related(rel, instance, related)
 
     @transaction.atomic
-    def perform_relationship_update(self, data):
+    def perform_relationship_update(self, rel, data):
         instance = self.get_object()
-        rel = self.get_relationship()
         related = self.get_related_from_data(rel, data)
 
         self.set_related(rel, instance, related)
@@ -61,9 +60,8 @@ class ManageRelationshipMixin(object):
                 instance.save()
 
     @transaction.atomic
-    def perform_relationship_destroy(self, data):
+    def perform_relationship_destroy(self, rel, data):
         instance = self.get_object()
-        rel = self.get_relationship()
         related = self.get_related_from_data(rel, data)
 
         self.unlink_related(rel, instance, related)

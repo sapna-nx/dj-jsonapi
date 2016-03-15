@@ -167,23 +167,14 @@ class ResourceView(APIView):
                 body[key] = kwargs[key]
         return body
 
-    def get_relationship(self, relname=None):
+    def get_relationship(self, relname):
         """
         Returns the relationship for a given relationship name. If no name is
         specified, it attempts to get the relationship for the current request.
         """
-        if relname is None:
-            assert self.relname_url_kwarg in self.kwargs, (
-                'Expected view %s to be called with a URL keyword argument '
-                'named "%s". Fix your URL conf, or set the '
-                '`.relname_url_kwarg` attribute on the view correctly.' %
-                (self.__class__.__name__, self.relname_url_kwarg)
-            )
-            relname = self.kwargs[self.relname_url_kwarg]
-
-        for rel in self.relationships:
-            if relname == rel.relname:
-                return rel
+        relationships = self.get_relationships()
+        if relname in relationships:
+            return relationships[relname]
 
         # raise 404 if no relationship was found. This also covers calls on
         # '/relationships/'
