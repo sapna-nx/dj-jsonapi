@@ -7,10 +7,6 @@ class GenericResourceViewSet(ViewSetMixin, generics.GenericResourceView):
     pass
 
 
-class GenericPolymorphicResourceViewSet(ViewSetMixin, generics.GenericPolymorphicResourceView):
-    pass
-
-
 class ReadOnlyResourceViewSet(mixins.RetrieveResourceMixin,
                               mixins.ListResourceMixin,
                               mixins.RetrieveRelatedResourceMixin,
@@ -29,17 +25,4 @@ class ResourceViewSet(mixins.CreateResourceMixin,
                       mixins.RetrieveRelationshipMixin,
                       mixins.ManageRelationshipMixin,
                       GenericResourceViewSet):
-    pass
-
-
-class PolymorphicResourceViewSet(mixins.CreateResourceMixin,
-                                 mixins.RetrieveResourceMixin,
-                                 mixins.UpdateResourceMixin,
-                                 mixins.DestroyResourceMixin,
-                                 mixins.ListResourceMixin,
-                                 mixins.RetrieveRelatedResourceMixin,
-                                 mixins.ManageRelatedResourceMixin,
-                                 mixins.RetrieveRelationshipMixin,
-                                 mixins.ManageRelationshipMixin,
-                                 GenericPolymorphicResourceViewSet):
     pass
