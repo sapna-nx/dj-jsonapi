@@ -88,20 +88,13 @@ class ResourceView(APIView):
         try:
             return document['data']
         except KeyError:
-            self.malformed_document('data', '/data')
+            raise exceptions.MalformedDocument('data', '/data')
 
     def get_reldata(self, document, relname):
         try:
             return document['data']
         except KeyError:
-            self.malformed_document('data', '/%s/data' % relname)
-
-    def malformed_document(self, key, pointer):
-        raise exceptions.ParseError(
-            '\'%s\' key not found in document.' % key,
-            title='Malformed Document',
-            source={'pointer': pointer},
-        )
+            raise exceptions.MalformedDocument('data', '/%s/data' % relname)
 
     def validate_identity(self, data, instance=None):
         errors = []
