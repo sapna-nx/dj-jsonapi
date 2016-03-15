@@ -82,17 +82,6 @@ class ResourceView(APIView):
         self.__router = getattr(self, '__router', routers.BaseAPIRouter())
         return self.__router.get_default_base_name(self)
 
-    def get_default_links(self):
-        """
-        The default top-level links for the current request. Contains the
-        `self` link for the current request.
-        This method should be overridden in order to provide addtitional
-        top-level default links, such as pagination.
-        """
-        return OrderedDict([
-            ('self', self.request.build_absolute_uri()),
-        ])
-
     def _get_dynamic_views(self):
         detail_views = []
         list_views = []
@@ -109,50 +98,6 @@ class ResourceView(APIView):
                     list_views.append(url_path.replace('_', '-'))
 
         return detail_views, list_views
-
-    def get_data(self, document):
-        """
-        Get the primary 'data' from the request document.
-        """
-        try:
-            return document['data']
-        except KeyError:
-            raise exceptions.MalformedDocument('data', '/data')
-
-    def get_reldata(self, document, relname):
-        try:
-            return document['data']
-        except KeyError:
-            raise exceptions.MalformedDocument('data', '/%s/data' % relname)
-
-    def validate_identity(self, data, instance=None):
-        errors = []
-
-        # handle reource ID
-        if not instance:
-            if 'id' in data and not self.allow_client_generated_ids:
-                errors.append(
-                    exceptions.PermissionDenied('Client-Generated IDs are not supported.')
-                )
-        else:
-            if 'id' not in data:
-                errors.append(
-                    exceptions.ParseError('Resource ID not specified')
-                )
-
-            if data['id'] != instance.pk:
-                errors.append(
-                    exceptions.Conflict('Resource ID mismatch')
-                )
-
-        # handle resource type
-        if 'type' not in data:
-            errors.append(exceptions.ParseError('Resource type not specified'))
-        if data['type'] != self.get_resource_type():
-            errors.append(exceptions.Conflict('Resource type mismatch'))
-
-        if errors:
-            raise exceptions.ErrorList(errors)
 
     def get_resource_actions(self, resource_id):
         """
@@ -179,6 +124,83 @@ class ResourceView(APIView):
         return OrderedDict(((
             view_name, reverse("%s-%s" % (base_name, view_name), self.request)
         ) for view_name in view_names))
+
+    # Document validation
+
+    def get_data(self, document):
+        """
+        Get the primary 'data' from the request document.
+        """
+        try:
+            return document['data']
+        except KeyError:
+            raise exceptions.MalformedDocument('data', '/data')
+
+    def get_reldata(self, document, relname):
+        """
+        Get the related 'data' from the request document.
+        """
+        # TODO: This should parse from the full document
+        try:
+            return document['data']
+        except KeyError:
+            raise exceptions.MalformedDocument('data', '/%s/data' % relname)
+
+    # Identity & type validation
+
+    def validate_identity(self, data, instance=None):
+        """
+        Validate the identity of the request data.
+        """
+        errors = self._validate_id(data, instance)
+        errors += self._validate_type(data, instance)
+
+        if errors:
+            raise exceptions.ErrorList(errors)
+
+    def _validate_id(self, data, instance=None):
+        errors = []
+
+        if not instance:
+            if 'id' in data and not self.allow_client_generated_ids:
+                errors.append(exceptions.PermissionDenied('Client-Generated IDs are not supported.'))
+
+        else:
+            if 'id' not in data:
+                errors.append(exceptions.ParseError('Resource ID not specified.'))
+
+            elif data['id'] != self.get_resource_id(instance):
+                errors.append(exceptions.Conflict('Resource ID mismatch.'))
+
+        return errors
+
+    def _validate_type(self, data, instance=None):
+        errors = []
+
+        if 'type' not in data:
+            errors.append(exceptions.ParseError('Resource type not specified.'))
+
+        if data['type'] != self.get_primary_type() or data['type'] in self.get_subtypes():
+            raise exceptions.Conflict('Resource type not accepted.')
+
+        if instance:
+            if data['type'] != self.get_resource_type(instance):
+                errors.append(exceptions.Conflict('Resource type mismatch.'))
+
+        return errors
+
+    # Response building methods
+
+    def get_default_links(self):
+        """
+        The default top-level links for the current request. Contains the
+        `self` link for the current request.
+        This method should be overridden in order to provide addtitional
+        top-level default links, such as pagination.
+        """
+        return OrderedDict([
+            ('self', self.request.build_absolute_uri()),
+        ])
 
     def build_response_body(self, **kwargs):
         """
@@ -208,3 +230,64 @@ class ResourceView(APIView):
         # raise 404 if no relationship was found. This also covers calls on
         # '/relationships/'
         raise exceptions.NotFound()
+
+    # Resource building methods
+
+    def get_resource_id(self, instance):
+        raise NotImplementedError('`get_resource_id()` must be implemented.')
+
+    def get_resource_type(self, instance):
+        raise NotImplementedError('`get_resource_type()` must be implemented.')
+
+    def get_resource_attributes(self, instance):
+        raise NotImplementedError('`get_resource_attributes()` must be implemented.')
+
+    def get_resource_relationships(self, instance):
+        raise NotImplementedError('`get_resource_relationships()` must be implemented.')
+
+    def get_resource_links(self, instance):
+        raise NotImplementedError('`get_resource_links()` must be implemented.')
+
+    def get_resource_meta(self, instance):
+        return None
+
+    def build_resource(self, instance, linkages=None):
+        """
+        Returns a 'resource object' for a resource instance, in conformance with:
+        http://jsonapi.org/format/#document-resource-objects
+        """
+        subtype = self.get_resource_type(instance)
+        subtype = self.get_subtypes().get(subtype)
+        if subtype is not None:
+            return subtype.viewset.build_resource(instance, linkages)
+
+        data = OrderedDict((
+            ('id', self.get_resource_id(instance)),
+            ('type', self.get_resource_type(instance)),
+            ('links', self.get_resource_links(instance)),
+            ('attributes', self.get_resource_attributes(instance)),
+            ('relationships', self.get_resource_relationships(instance, linkages)),
+            ('meta', self.get_resource_meta(instance)),
+        ))
+
+        # filter out empty values
+        return OrderedDict((k, v) for k, v in data.items() if v)
+
+    def build_resource_identifier(self, instance):
+        """
+        Returns a 'resource identifier object' for a resource instance, in conformance with:
+        http://jsonapi.org/format/#document-resource-identifier-objects
+        """
+        subtype = self.get_resource_type(instance)
+        subview = self.get_subtypes().get(subtype)
+        if subview is not None:
+            return subview.build_resource_identifier(instance)
+
+        data = OrderedDict((
+            ('id', self.get_resource_id(instance)),
+            ('type', self.get_resource_type(instance)),
+            ('meta', self.get_resource_meta(instance)),
+        ))
+
+        # filter out empty values
+        return OrderedDict((k, v) for k, v in data.items() if v)
