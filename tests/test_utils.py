@@ -6,7 +6,8 @@ from rest_framework import serializers
 from json_api.utils import import_class
 from json_api.utils.model_meta import get_field_info, verbose_name
 from json_api.utils.view_meta import get_field_attnames
-from json_api.utils.rels import rel, model_rel
+from json_api.utils.rels import rel
+from json_api.utils.types import subtype
 
 from tests.models import Parent, Child, Proxy, Related
 from tests.views import BookView
@@ -65,30 +66,39 @@ class TestModelMeta(TestCase):
         self.assertEqual(list(info.relations.keys()), ['parent', 'otherrelated'])
 
 
-class TestRels(UTestCase):
+class TestRel(UTestCase):
 
-    def test_rel(self):
-        self.assertEqual(
-            rel('a', 'b')._asdict(),
-            {'relname': 'a', 'viewset': 'b', 'attname': 'a'}
-        )
+    def test_rel_attname(self):
+        r = rel('a', 'b')
+        self.assertEqual(r.relname, 'a')
+        self.assertEqual(r.attname, 'a')
 
-        self.assertEqual(
-            rel('a', 'b', 'c')._asdict(),
-            {'relname': 'a', 'viewset': 'b', 'attname': 'c'}
-        )
+        r = rel('a', 'b', 'c')
+        self.assertEqual(r.relname, 'a')
+        self.assertEqual(r.attname, 'c')
 
-    def test_model_rel(self):
-        m = model_rel('a', 'a', 'tests.test_utils.Import', None, None)
-        self.assertEqual(m.viewset.__class__, Import)
+    def test_lazy_viewset(self):
+        r = rel('a', 'tests.test_utils.Import')
+        self.assertIsInstance(r.viewset, Import)
 
-        m = model_rel('a', 'a', Import(), None, None)
-        self.assertEqual(m.viewset.__class__, Import)
+        r = rel('a', Import())
+        self.assertIsInstance(r.viewset, Import)
 
-        m = model_rel('a', 'a', Import, None, None)
-        self.assertEqual(m.viewset.__class__, Import)
+        r = rel('a', Import)
+        self.assertIsInstance(r.viewset, Import)
 
-        self.assertIsNone(m.viewset.request)
+
+class TestSubtype(UTestCase):
+
+    def test_lazy_viewset(self):
+        m = subtype('tests.test_utils.Import')
+        self.assertIsInstance(m.viewset, Import)
+
+        m = subtype(Import())
+        self.assertIsInstance(m.viewset, Import)
+
+        m = subtype(Import)
+        self.assertIsInstance(m.viewset, Import)
 
 
 class TestViewMeta(TestCase):
