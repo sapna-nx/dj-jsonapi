@@ -1,6 +1,7 @@
 
 from collections import OrderedDict
 from django.utils.functional import cached_property
+from rest_framework.request import Request
 from rest_framework.views import APIView
 from json_api.utils.reverse import reverse
 from json_api import routers, exceptions
@@ -9,40 +10,68 @@ from json_api import routers, exceptions
 class ResourceView(APIView):
     """
     Base class for all json-api views. Contains some base machinery necessary
-    for resolving realtionships and building json-api compliant responses.
+    for resolving relationships and building json-api compliant responses.
     """
-    # TODO: verify that `requst = None` is safe. Does DRF ever rely on
+    # TODO: verify that `request = None` is safe. Does DRF ever rely on
     # the request attribute not being set? Should view code be rewritten to
     # not assume that requests exist?
     request = None
-    relationships = None
     relname_url_kwarg = 'relname'
+    relationships = None
+    subtypes = None
 
     allow_client_generated_ids = False
 
-    # This is somewhat gross, however it does allow us to declaratively set the
-    # relationships on the class while still accessing the resolved rels on
-    # the instance.
-    # The rels cannot be resolved in __init__, as this could potentially set
-    # off infinite recursion of relationship resolving.
-    # The rels should not be resolved in `initial()`, since this ties resolving
-    # to request dispatching.
-    def __getattribute__(self, name):
-        if name == 'relationships':
-            return self._resolved_relationships
-        return super(ResourceView, self).__getattribute__(name)
+    # Dispatch methods
 
-    @cached_property
-    def _resolved_relationships(self):
-        return self.resolve_relationships(self.__class__.relationships)
+    def initialize_request(self, request, *args, **kwargs):
+        # simply return the request if it has already been initialized.
+        if isinstance(request, Request):
+            return request
+        return super(ResourceView, self).initialize_request(request, *args, **kwargs)
 
-    def resolve_relationships(self, relationships):
+    # Note: A caveat of this implementation is that the request is initialized
+    # in the primary ResourceView and is passed to the dispatch method of the
+    # heterogenous type's view. It is not entirely clear if this is desirable.
+    def distpach(self, request, *args, **kwargs):
+        request = self.initialize_request(request, *args, **kwargs)
+        subtype = self.get_subtypes().get(request.data.get('type'))
+        if subtype:
+            return subtype.viewset.distpach(self, request, *args, **kwargs)
+
+        return super(ResourceView, )
+
+    def get_primary_type(self):
         """
-        Hook for preprocessing/resolving relationship data. This method should
-        be overridden if the base relationship descriptor needs to be modified
-        with additional data.
+        Returns the primary type name accepted by this view.
         """
-        return relationships
+        raise NotImplementedError('`get_primary_type()` must be implemented.')
+
+    def get_subtypes(self):
+        """
+        Returns the subtype names accepted by this view, mapped to their
+        `subtype` descriptors.
+        """
+        subtypes = OrderedDict()
+
+        for subtype in self.subtypes or []:
+            subtype.viewset.request = self.request
+            subtypes[subtype.type] = subtype
+
+        return subtypes
+
+    def get_relationships(self):
+        """
+        Returns the relationship names associated with this view, mapped to
+        their `rel` descriptors.
+        """
+        rels = OrderedDict()
+
+        for rel in self.relationships or []:
+            rel.viewset.request = self.request
+            rels[rel.relname] = rel
+
+        return rels
 
     def get_basename(self):
         """

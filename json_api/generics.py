@@ -1,14 +1,11 @@
 
-import inspect
 from collections import OrderedDict
 from django.db.models.query import QuerySet
 from django.db.models import Value, CharField
-from django.utils import six
 from rest_framework.generics import GenericAPIView
 
-from json_api.utils import model_meta, import_class
+from json_api.utils import model_meta
 from json_api.utils.reverse import reverse
-from json_api.utils.rels import model_rel
 from json_api.utils.urls import unquote_brackets
 from json_api.exceptions import PermissionDenied
 from json_api.settings import api_settings
@@ -21,17 +18,19 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
     def __init__(self, *args, **kwargs):
         super(GenericResourceView, self).__init__(*args, **kwargs)
 
-        model = self.get_serializer_class().Meta.model
+        model = self.get_queryset().model
         self.model_info = model_meta.get_field_info(model)
 
-    def resolve_relationships(self, relationships):
-        if not relationships:
-            return []
-        return [model_rel(
-            info=self.model_info.relations[rel.attname],
-            request=self.request,
-            **rel._asdict()
-        ) for rel in relationships]
+    def get_relationships(self):
+        """
+        Returns the relationship names associated with this view, mapped to
+        their `rel` descriptors.
+        """
+        rels = super(GenericResourceView, self).get_relationships()
+        for rel in rels.values():
+            rel.info = self.model_info.relations[rel.attname]
+
+        return rels
 
     def get_serializer_class(self, relname=None):
         # if a relname isn't supplied, try to fetch from the view kwargs.
