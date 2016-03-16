@@ -174,6 +174,15 @@ class Throttled(APIError, exceptions.Throttled):
     pass
 
 
+class MalformedDocument(ParseError):
+    def __init__(self, key, pointer, **kwargs):
+        detail = '\'%s\' key not found in document.' % key
+        kwargs.setdefault('title', 'Malformed Document')
+        kwargs.setdefault('source', {'pointer': pointer})
+
+        super(MalformedDocument, self).__init__(detail, **kwargs)
+
+
 class ErrorList(exceptions.APIException):
     status_code = status.HTTP_400_BAD_REQUEST
 

@@ -10,7 +10,7 @@ def get_attribute_attnames(view):
     serializer_class = getattr(view, 'serializer_class')
     if serializer_class is None:
         raise ImproperlyConfigured(
-            "Cannot use 'get_field_attnames' on a view which "
+            "Cannot use 'get_attribute_attnames' on a view which "
             "does not have a 'serializer_class'."
         )
 
@@ -25,6 +25,8 @@ def get_rel_attnames(view):
     """
     Return a map of {resource rel name: model attname} for a view.
     """
+    if view.relationships is None:
+        return OrderedDict()
     return OrderedDict((rel.relname, rel.attname) for rel in view.relationships)
 
 

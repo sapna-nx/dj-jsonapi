@@ -41,7 +41,7 @@ class PolymorphicCheckedTypeField(CheckedTypeField):
     # it does not verify that the corresponding instance is a member of the given type.
 
     def validate_type(self, data):
-        models = [self.parent.Meta.model] + list(self.parent.Meta.subclasses)
+        models = [self.parent.Meta.model] + list(self.parent.Meta.subtypes)
 
         expected = [verbose_name(model) for model in models]
         if data not in expected:
@@ -58,7 +58,7 @@ class ResourceSerializer(serializers.ModelSerializer):
     It is agnostic to its identity and its relationships to other resources.
 
     Reference:
-    http://jsonapi.org/format/#document-structure-resource-objects
+    http://jsonapi.org/format/#document-resource-objects
     """
 
     def get_default_field_names(self, declared_fields, model_info):
@@ -79,7 +79,7 @@ class ResourceIdentifierSerializer(serializers.ModelSerializer):
     its normalized ID.
 
     Reference:
-    http://jsonapi.org/format/#document-structure-resource-identifier-objects
+    http://jsonapi.org/format/#document-resource-identifier-objects
     """
 
     def get_field_names(self, declared_fields, model_info):
@@ -121,8 +121,8 @@ class PolymorphicModelSerializer(serializers.ModelSerializer):
 
         # get the serializer subclass for an instance, or default to base class
         serializer_class = cls
-        if hasattr(instance, '_meta') and hasattr(cls.Meta, 'subclasses'):
-            serializer_class = cls.Meta.subclasses.get(instance._meta.model, cls)
+        if hasattr(instance, '_meta') and hasattr(cls.Meta, 'subtypes'):
+            serializer_class = cls.Meta.subtypes.get(instance._meta.model, cls)
 
         return super(PolymorphicModelSerializer, cls).__new__(serializer_class, *args, **kwargs)
 

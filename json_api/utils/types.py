@@ -5,20 +5,17 @@ from django.utils import six
 from . import import_class
 
 
-class rel(object):
+class subtype(object):
     """
-    A generic relationship descriptor.
+    A generic polymorphic type descriptor.
 
-    *relname* The name of the relationship. Used during serialization.
-    *viewset* The viewset that manages the related resource collection.
-    *attname* The name used to access the attribute on the resource.
-              Defaults to relname if not provided.
+    *type* The type string used to identify the subtype.
+    *viewset* The viewset that manages the subtype resource collection.
 
     """
-    def __init__(self, relname, viewset, attname=None):
-        self.relname = relname
+
+    def __init__(self, viewset):
         self.viewset = viewset
-        self.attname = relname if attname is None else attname
 
     def viewset():
         def fget(self):
@@ -38,3 +35,7 @@ class rel(object):
 
         return locals()
     viewset = property(**viewset())
+
+    @property
+    def type(self):
+        return self.viewset.get_primary_type()

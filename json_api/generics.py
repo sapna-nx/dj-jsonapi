@@ -1,14 +1,11 @@
 
-import inspect
 from collections import OrderedDict
 from django.db.models.query import QuerySet
 from django.db.models import Value, CharField
-from django.utils import six
 from rest_framework.generics import GenericAPIView
 
-from json_api.utils import model_meta, import_class
+from json_api.utils import model_meta
 from json_api.utils.reverse import reverse
-from json_api.utils.rels import model_rel
 from json_api.utils.urls import unquote_brackets
 from json_api.exceptions import PermissionDenied
 from json_api.settings import api_settings
@@ -21,17 +18,19 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
     def __init__(self, *args, **kwargs):
         super(GenericResourceView, self).__init__(*args, **kwargs)
 
-        model = self.get_serializer_class().Meta.model
+        model = self.get_queryset().model
         self.model_info = model_meta.get_field_info(model)
 
-    def resolve_relationships(self, relationships):
-        if not relationships:
-            return []
-        return [model_rel(
-            info=self.model_info.relations[rel.attname],
-            request=self.request,
-            **rel._asdict()
-        ) for rel in relationships]
+    def get_relationships(self):
+        """
+        Returns the relationship names associated with this view, mapped to
+        their `rel` descriptors.
+        """
+        rels = super(GenericResourceView, self).get_relationships()
+        for rel in rels.values():
+            rel.info = self.model_info.relations[rel.attname]
+
+        return rels
 
     def get_serializer_class(self, relname=None):
         # if a relname isn't supplied, try to fetch from the view kwargs.
@@ -46,27 +45,33 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             # TODO: decide if this amount of coupling between the router and
             # view is okay. Consider hyperlinked serializers as an example.
             if self.request.resolver_match.url_name.endswith('-relationship'):
-                return self.get_identity_serializer(rel)
+                return rel.viewset.get_identity_serializer()
 
             elif self.request.resolver_match.url_name.endswith('-related'):
                 return self.get_related_serializer(rel)
 
         return super(GenericResourceView, self).get_serializer_class()
 
-    def get_identity_serializer(self, rel):
+    def get_identity_serializer(self):
         """
         Returns a serializer for a relationship that is suitable for
         representing its resource identifiers.
         """
-        serializer_class = rel.viewset.get_serializer_class()
+        serializer_class = self.get_serializer_class()
         identifier_class = {
             True: serializers.PolymorphicResourceIdentifierSerializer,
             False: serializers.ResourceIdentifierSerializer,
-        }[issubclass(serializer_class, serializers.PolymorphicResourceSerializer)]
+        }[self.subtypes is not None]
+
+        # build {model: serializer} class maps
+        types = {}
+        for subtype in self.get_subtypes().values():
+            cls = subtype.viewset.get_serializer_class()
+            types[cls.Meta.model] = cls
 
         class ResourceRelationshipIdentifier(identifier_class):
             class Meta(serializer_class.Meta):
-                pass
+                subtypes = types or None
 
         return ResourceRelationshipIdentifier
 
@@ -82,7 +87,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         Extra context provided to the serializer class.
         """
         return {
-            'request': self.request,
+            'request': getattr(self, 'request', None),
             'view': self
         }
 
@@ -101,72 +106,47 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         return links
 
-    def get_resource_type(self, model=None):
+    def get_primary_type(self):
+        model = self.get_queryset().model
+        return self.get_resource_type(model)
+
+    def get_resource(self):
+        return self.get_object()
+
+    def get_resource_id(self, instance):
+        return getattr(instance, self.lookup_field)
+
+    def get_resource_type(self, instance):
         """
         Returns the resource type for a given model. Currently this defaults to
         the verbose_name of the model.
 
-        If no model is given, the model associated with the view is used.
+        instance may be either a model class or an instance.
         """
-        if model is None:
-            model = self.get_serializer_class().Meta.model
-        return model._meta.verbose_name
+        return model_meta.verbose_name(instance)
+
+    def get_resource_attributes(self, instance):
+        return self.get_serializer(instance).data
 
     def get_resource_links(self, instance):
         """
         Returns a links object for a resource in conformance with:
-        http://jsonapi.org/format/#document-structure-structure-resource-object-links
+        http://jsonapi.org/format/#document-resource-object-links
 
         Additionally, it includes any detail routes attached to the viewset.
         """
         view_name = "%s-detail" % self.get_basename()
+        resource_id = self.get_resource_id(instance)
         links = OrderedDict((
-            ('self', reverse(view_name, self.request, args=(instance.pk, ))),
+            ('self', reverse(view_name, self.request, args=(resource_id, ))),
         ))
 
-        links.update(self.get_resource_actions(instance.pk))
+        links.update(self.get_resource_actions(resource_id))
 
+        # TODO: maybe move to HTML renderer?
         links = {name: unquote_brackets(link) for name, link in links.items()}
 
         return links
-
-    def get_resource_meta(self, instance):
-        pass
-
-    def build_resource(self, instance, linkages=None):
-        """
-        Returns a resource object for a model instance, in conformance with:
-        http://jsonapi.org/format/#document-structure-resource-objects
-        """
-
-        serializer = self.get_serializer(instance)
-        data = OrderedDict((
-            ('id', instance.pk),
-            ('type', self.get_resource_type(instance)),
-            ('links', self.get_resource_links(instance)),
-            ('attributes', serializer.data),
-            ('relationships', self.get_relationship_objects(instance, linkages)),
-            ('meta', self.get_resource_meta(instance)),
-        ))
-
-        # filter out empty values
-        return OrderedDict((k, v) for k, v in data.items() if v)
-
-    def build_resource_identifier(self, instance):
-        """
-        Returns a resource identifier object for a model instance, in conformance with:
-        http://jsonapi.org/format/#document-structure-resource-identifier-objects
-        """
-        data = OrderedDict((
-            ('id', instance.pk),
-            ('type', self.get_resource_type(instance)),
-        ))
-
-        meta = self.get_resource_meta(instance)
-        if meta:
-            data['meta'] = meta
-
-        return data
 
     def get_relationship_links(self, rel, instance):
         return OrderedDict((
@@ -197,8 +177,11 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             ))
 
         resource_type = self.get_resource_type(related.model)
-        serializer_class = self.get_identity_serializer(rel)
+        serializer_class = rel.viewset.get_identity_serializer()
         related = related.only('pk').annotate(type=Value(resource_type, CharField()))
+
+        # TODO: build object individually, similar to build_resource. This is
+        # related to additional view handling, such as meta blocks.
         return serializer_class(related, many=True).data
 
     def get_relationship_meta(self, rel):
@@ -209,7 +192,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         Builds a relationship object that represents to-one and to-many
         relationships between the primary resource and related resources.
         This conforms to the "relationship object" described under:
-        http://jsonapi.org/format/#document-structure-resource-objects-relationships
+        http://jsonapi.org/format/#document-resource-object-relationships
 
         Set `include_linkage` to include relationship linkage data in the
         request.
@@ -237,10 +220,10 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         return rel_object
 
-    def get_relationship_objects(self, instance, linkages=None):
+    def get_resource_relationships(self, instance, linkages=None):
         """
         Returns a dictionary of {relname: relationship object}
-        This is defined by: http://jsonapi.org/format/#document-structure-links
+        This is defined by: http://jsonapi.org/format/#document-links
 
         This object is suitable for displaying the relationship data on a resource object.
         Note that this excludes linkage for to-many relationships, as it may be 'large'
@@ -262,7 +245,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         `meta` may be overridden.
 
         """
-        if not self.relationships:
+        if not self.get_relationships():
             return None
 
         if linkages is None:
@@ -271,9 +254,9 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         return OrderedDict([(
             rel.relname,
             self.build_relationship_object(
-                rel, instance, rel.relname in linkages
+                rel, instance, relname in linkages
             )
-        ) for rel in self.relationships])
+        ) for relname, rel in self.get_relationships().items()])
 
     def get_related_queryset(self, rel):
         """
@@ -349,7 +332,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         if data is None and not rel.info.to_many:
             return None
 
-        serializer = self.get_identity_serializer(rel)(data=data, many=rel.info.to_many)
+        serializer = rel.viewset.get_identity_serializer()(data=data, many=rel.info.to_many)
         serializer.is_valid(raise_exception=True)
 
         if rel.info.to_many:
@@ -446,39 +429,3 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             setattr(instance, accessor_name, related)
         except ValueError:
             raise PermissionDenied('This field is required.', source={'pointer': rel.relname})
-
-
-class GenericPolymorphicResourceView(GenericResourceView):
-    subtypes = None
-
-    # todo: allow inclusion/selection of subtypes
-
-    def build_resource(self, instance, linkages=None):
-        """
-        Returns a resource object for a model instance, in conformance with:
-        http://jsonapi.org/format/#document-structure-resource-objects
-        """
-        data = super(GenericPolymorphicResourceView, self).build_resource(instance, linkages)
-        viewset = self.get_subtype_viewset(data['type'])
-
-        if not viewset:
-            return data
-
-        sub = viewset.serializer_class.Meta.model.objects.get(pk=instance.pk)
-
-        return viewset.build_resource(sub, linkages)
-
-    def get_subtype_viewset(self, subtype):
-        if subtype not in self.subtypes:
-            return None
-
-        viewset = self.subtypes[subtype]
-
-        if isinstance(viewset, six.string_types):
-            viewset = import_class(viewset)
-
-        if inspect.isclass(viewset):
-            viewset = viewset()
-
-        viewset.request = self.request
-        return viewset
