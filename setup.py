@@ -34,7 +34,7 @@ class Test(test):
 
 setup(
     name='dj-jsonapi',
-    version='0.0.1',
+    version='0.0.2',
     license='BSD License',
 
     description='A JSON-API server implementation built for Django on top of Django Rest Framework',
