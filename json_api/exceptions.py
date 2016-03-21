@@ -178,6 +178,15 @@ class Throttled(APIError, exceptions.Throttled):
     pass
 
 
+class FilterValidationError(ParseError):
+    title = 'Filter Validation Error'
+
+    def __init__(self, detail, parameter, *args, **kwargs):
+        kwargs.setdefault('source', {'parameter': parameter})
+
+        super(FilterValidationError, self).__init__(detail, **kwargs)
+
+
 class MalformedDocument(ParseError):
     title = 'Malformed Document'
 

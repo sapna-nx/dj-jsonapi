@@ -1,9 +1,10 @@
 
 import re
+from django.core.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
 from rest_framework_filters import backends, filterset
 from django_filters.filterset import STRICTNESS
-from json_api.exceptions import ErrorList, NotFound, ParseError
+from json_api.exceptions import ErrorList, NotFound, ParseError, FilterValidationError
 from json_api.settings import api_settings
 from json_api.utils import view_meta
 
@@ -151,9 +152,22 @@ class FieldLookupFilter(backends.DjangoFilterBackend):
         if filter_class:
             if hasattr(filter_class, 'get_subset'):
                 filter_class = filter_class.get_subset(filters)
-            return filter_class(filters, queryset=queryset).qs
+
+            try:
+                return filter_class(filters, queryset=queryset).qs
+            except ValidationError as e:
+                raise self._convert_exception(e)
 
         return queryset
+
+    def _convert_exception(self, exc):
+        errors = []
+
+        for param, exc_list in exc.message_dict.items():
+            parameter = 'filter[%s]' % param
+            errors += [FilterValidationError(detail, parameter) for detail in exc_list]
+
+        return ErrorList(errors)
 
 
 class FilterSet(filterset.FilterSet):
