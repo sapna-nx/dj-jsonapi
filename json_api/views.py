@@ -256,9 +256,8 @@ class ResourceView(APIView):
         if relname in relationships:
             return relationships[relname]
 
-        # raise 404 if no relationship was found. This also covers calls on
-        # '/relationships/'
-        raise exceptions.NotFound()
+        # raise 404 if no relationship was found. This also covers '/relationships'?
+        raise exceptions.RelationshipNotFound(relname)
 
     # Resource building methods
 

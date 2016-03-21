@@ -197,6 +197,15 @@ class MalformedDocument(ParseError):
         super(MalformedDocument, self).__init__(detail, **kwargs)
 
 
+class RelationshipNotFound(NotFound):
+
+    def __init__(self, relname, **kwargs):
+        detail = 'Relationship \'%s\' not found.' % relname
+        kwargs.setdefault('detail', detail)
+
+        super(RelationshipNotFound, self).__init__(**kwargs)
+
+
 class ErrorList(exceptions.APIException):
     status_code = status.HTTP_400_BAD_REQUEST
 
