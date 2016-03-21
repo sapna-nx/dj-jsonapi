@@ -79,8 +79,9 @@ def expand_validation_error(base_exc, detail, pointer='/data'):
                 errors += expand_validation_error(base_exc, sub_detail, "%s/attributes/%s" % (pointer, key))
 
     else:
-        # TODO: Delete me after testing
-        raise Exception("dis is dun broke.")
+        # TODO: determine correct behavior
+        # For now, raise original exception that caused error expansion to fail
+        raise base_exc
 
     return errors
 
@@ -111,7 +112,8 @@ class APIError(exceptions.APIException):
     @property
     def data(self):
         error = self._data.copy()
-        error['detail'] = self.detail
+        for key, value in error.items():
+            error[key] = getattr(self, key, None) if value is None else value
 
         # filter out empty values
         return OrderedDict((k, v) for k, v in error.items() if v)
@@ -130,6 +132,8 @@ class ValidationError(APIError, exceptions.ValidationError):
         super(ValidationError, self).__init__(*args, **kwargs)
 
         # TODO: Figure out a better solution
+        # ValidationErrors containing a list of length 1 are terminal.
+        # ValidationErrors with a length greather than 1 are expanded.
         if isinstance(self.detail, list) and len(self.detail) == 1:
             self.detail = self.detail[0]
 
@@ -175,9 +179,10 @@ class Throttled(APIError, exceptions.Throttled):
 
 
 class MalformedDocument(ParseError):
+    title = 'Malformed Document'
+
     def __init__(self, key, pointer, **kwargs):
         detail = '\'%s\' key not found in document.' % key
-        kwargs.setdefault('title', 'Malformed Document')
         kwargs.setdefault('source', {'pointer': pointer})
 
         super(MalformedDocument, self).__init__(detail, **kwargs)
