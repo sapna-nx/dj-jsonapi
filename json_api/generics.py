@@ -33,7 +33,10 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         try:
             return queryset.get(**{self.lookup_field: lookup})
-        except (model.DoesNotExist, model.MultipleObjectsReturned):
+
+        # Except missing instances, and invalid lookup values.
+        # TODO: Maybe accept all exceptions?
+        except (model.DoesNotExist, model.MultipleObjectsReturned, ValueError):
             return None
 
     def get_relationships(self):
