@@ -21,6 +21,21 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         model = self.get_queryset().model
         self.model_info = model_meta.get_field_info(model)
 
+    def _try_resource(self):
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        lookup = self.kwargs.get(lookup_url_kwarg, None)
+
+        if lookup is None:
+            return None
+
+        queryset = self.get_queryset()
+        model = queryset.model
+
+        try:
+            return queryset.get(**{self.lookup_field: lookup})
+        except (model.DoesNotExist, model.MultipleObjectsReturned):
+            return None
+
     def get_relationships(self):
         """
         Returns the relationship names associated with this view, mapped to

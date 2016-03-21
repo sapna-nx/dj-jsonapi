@@ -40,17 +40,17 @@ class ResourceView(APIView):
     def _get_requested_type(self):
         # try getting the resource as most requests are operating on an
         # existing resource.
-        try:
-            resource = self.get_resource()
-        except:
-            resource = None
-
-        if resource:
+        resource = self._try_resource()
+        if resource is not None:
             return self.get_resource_type(resource)
 
         # try to get {data: type: ""} from the request's data.
         if 'data' in self.request.data and 'type' in self.request.data['data']:
             return self.request.data['data']['type']
+
+    def _try_resource(self):
+        # try to get the requested resource instance via URL parsing.
+        raise NotImplementedError('`_try_resource()` must be implemented.')
 
     # Note: A caveat of this implementation is that the request is initialized
     # in the primary ResourceView and is passed to the dispatch method of the
