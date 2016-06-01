@@ -2,6 +2,7 @@
 from collections import OrderedDict
 from django.db.models.query import QuerySet
 from django.db.models import Value, CharField
+from django.utils.functional import cached_property
 from rest_framework.generics import GenericAPIView
 
 from json_api.utils import model_meta
@@ -15,11 +16,10 @@ from json_api import serializers, views
 class GenericResourceView(views.ResourceView, GenericAPIView):
     inclusion_class = api_settings.DEFAULT_INCLUSION_CLASS
 
-    def __init__(self, *args, **kwargs):
-        super(GenericResourceView, self).__init__(*args, **kwargs)
-
+    @cached_property
+    def model_info(self):
         model = self.get_queryset().model
-        self.model_info = model_meta.get_field_info(model)
+        return model_meta.get_field_info(model)
 
     def _try_resource(self):
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
