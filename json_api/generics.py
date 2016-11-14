@@ -327,7 +327,10 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             # check that the related object is in the viewset's queryset.
             # raises a 403 if not the related object is not in the queryset.
             # TODO: determine if this is the correct behavior
-            if not viewset_queryset.filter(pk=related_object.pk).exists():
+            # if not viewset_queryset.filter(pk=related_object.pk).exists():
+            # refetch object, this allows us to handle polymorphic scenarios
+            related_object = viewset_queryset.filter(pk=related_object.pk).get()
+            if related_object is None:
                 raise PermissionDenied
 
             # May raise a permission denied
