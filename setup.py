@@ -34,7 +34,7 @@ class Test(test):
 
 setup(
     name='dj-jsonapi',
-    version='0.0.3',
+    version='0.0.4',
     license='BSD License',
 
     description='A JSON-API server implementation built for Django on top of Django Rest Framework',
@@ -42,10 +42,10 @@ setup(
     url='https://github.com/ITNG/dj-jsonapi',
     author='Ryan P Kilby',
     author_email='rpkilby@ncsu.edu',
-    install_requires=['djangorestframework>=3.2,!=3.2.3', 'djangorestframework-filters'],
+    install_requires=['djangorestframework>=3.2,<3.4,!=3.2.3', 'djangorestframework-filters'],
     packages=find_packages(exclude=('tests', )),
 
-    tests_require=['django>=1.8', 'fantasy-database'],
+    tests_require=['django>=1.8,<1.10', 'fantasy-database'],
 
     cmdclass={
         'test': Test,
