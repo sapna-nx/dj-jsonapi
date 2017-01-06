@@ -12,10 +12,10 @@ from django.utils import six
 def handler(exc, context):
 
     if isinstance(exc, Http404):
-        exc = NotFound()
+        exc = NotFound(str(exc))
 
     elif isinstance(exc, DjPermissionDenied):
-        exc = PermissionDenied()
+        exc = PermissionDenied(str(exc))
 
     response = _exception_handler(exc, context)
 
