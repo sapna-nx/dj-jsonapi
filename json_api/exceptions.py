@@ -66,7 +66,7 @@ def expand_validation_error(base_exc, detail, pointer='/data'):
                 errors += expand_validation_error(base_exc, sub_detail, "%s/%s" % (pointer, index))
 
     elif isinstance(detail, dict):
-        for key, sub_detail in detail.items():
+        for key, sub_detail in list(detail.items()):
             if key == 'non_field_errors':
                 # non attribute errors belong to the overall 'data'.
                 errors += expand_validation_error(base_exc, sub_detail, pointer)
@@ -112,11 +112,11 @@ class APIError(exceptions.APIException):
     @property
     def data(self):
         error = self._data.copy()
-        for key, value in error.items():
+        for key, value in list(error.items()):
             error[key] = getattr(self, key, None) if value is None else value
 
         # filter out empty values
-        return OrderedDict((k, v) for k, v in error.items() if v)
+        return OrderedDict((k, v) for k, v in list(error.items()) if v)
 
 
 class _Conflict(exceptions.APIException):

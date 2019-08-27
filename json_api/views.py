@@ -302,7 +302,7 @@ class ResourceView(APIView):
         ))
 
         # filter out empty values
-        return OrderedDict((k, v) for k, v in data.items() if v)
+        return OrderedDict((k, v) for k, v in list(data.items()) if v)
 
     def build_resource_identifier(self, instance):
         """
@@ -321,4 +321,4 @@ class ResourceView(APIView):
         ))
 
         # filter out empty values
-        return OrderedDict((k, v) for k, v in data.items() if v)
+        return OrderedDict((k, v) for k, v in list(data.items()) if v)

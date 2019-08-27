@@ -102,7 +102,7 @@ class RelatedResourceInclusionTests(UTestCase):
         self.assertEqual(self.includer.get_includable_rels(view), ['author'])
 
         view = InvalidFields()
-        with self.assertRaisesRegexp(AssertionError, 'must be valid resource relnames'):
+        with self.assertRaisesRegex(AssertionError, 'must be valid resource relnames'):
             self.includer.get_includable_rels(view)
 
     def test_is_invalid_include(self):

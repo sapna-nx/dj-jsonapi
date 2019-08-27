@@ -136,7 +136,7 @@ class APIRouter(routers.DefaultRouter, BaseAPIRouter):
                 links = OrderedDict((
                     ('self', request.build_absolute_uri()),
                 ))
-                for key, url_name in api_root_dict.items():
+                for key, url_name in list(api_root_dict.items()):
                     try:
                         links[key] = reverse(
                             url_name,
