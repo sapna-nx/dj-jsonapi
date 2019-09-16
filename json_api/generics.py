@@ -45,7 +45,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         their `rel` descriptors.
         """
         rels = super(GenericResourceView, self).get_relationships()
-        for rel in rels.values():
+        for rel in list(rels.values()):
             rel.info = self.model_info.relations[rel.attname]
 
         return rels
@@ -83,7 +83,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
 
         # build {model: serializer} class maps
         types = {}
-        for subtype in self.get_subtypes().values():
+        for subtype in list(self.get_subtypes().values()):
             cls = subtype.viewset.get_serializer_class()
             types[cls.Meta.model] = cls
 
@@ -120,7 +120,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         if getattr(self, 'page', None):
             links.update(self.paginator.get_links())
 
-        links = {name: unquote_brackets(link) for name, link in links.items()}
+        links = {name: unquote_brackets(link) for name, link in list(links.items())}
 
         return links
 
@@ -162,7 +162,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         links.update(self.get_resource_actions(resource_id))
 
         # TODO: maybe move to HTML renderer?
-        links = {name: unquote_brackets(link) for name, link in links.items()}
+        links = {name: unquote_brackets(link) for name, link in list(links.items())}
 
         return links
 
@@ -274,7 +274,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             self.build_relationship_object(
                 rel, instance, relname in linkages
             )
-        ) for relname, rel in self.get_relationships().items()])
+        ) for relname, rel in list(self.get_relationships().items())])
 
     def get_related_queryset(self, rel):
         """

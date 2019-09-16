@@ -16,7 +16,7 @@ def get_attribute_attnames(view):
 
     return OrderedDict(
         (field_name, field.source)
-        for field_name, field in serializer_class().fields.items()
+        for field_name, field in list(serializer_class().fields.items())
         if not getattr(field, 'write_only', False)
     )
 

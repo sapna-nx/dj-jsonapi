@@ -218,7 +218,7 @@ class RelatedResourceInclusion(BaseInclusion):
 
         grouped_paths = self.group_include_paths(paths)
         for instance in data:
-            for relname, subpaths in grouped_paths.items():
+            for relname, subpaths in list(grouped_paths.items()):
                 rel = view.get_relationship(relname)
 
                 # use the related view to access the included data.

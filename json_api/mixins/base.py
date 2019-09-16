@@ -37,7 +37,7 @@ class CreateResourceMixin(object):
         # to-many relationships should be deferred since it implies m2m or a reverse FK.
         relationships = dict()
         deferred_relationships = dict()
-        for relname, reldoc in data.get('relationships', {}).items():
+        for relname, reldoc in list(data.get('relationships', {}).items()):
             rel = self.get_relationship(relname)
             reldata = self.get_reldata(reldoc, relname)
 
@@ -60,7 +60,7 @@ class CreateResourceMixin(object):
 
         instance = serializer.save(**relationships)
 
-        for rel, related in deferred_relationships.items():
+        for rel, related in list(deferred_relationships.items()):
             self.set_related(rel, instance, related)
 
             # deferred/reverse to-one relationships need to be saved
@@ -84,17 +84,17 @@ class ListResourceMixin(object):
         queryset = self.filter_queryset(self.get_queryset())
 
         include_paths = self.get_include_paths(queryset)
-        linkages = self.group_include_paths(include_paths).keys()
+        linkages = list(self.group_include_paths(include_paths).keys())
 
         page = self.paginate_queryset(queryset)
         self.page = page
         if page is not None:
             data = [self.build_resource(instance, linkages) for instance in page]
-            included_data = self.get_included_data(page, include_paths).values()
+            included_data = list(self.get_included_data(page, include_paths).values())
 
         else:
             data = [self.build_resource(instance, linkages) for instance in queryset]
-            included_data = self.get_included_data(queryset, include_paths).values()
+            included_data = list(self.get_included_data(queryset, include_paths).values())
 
         links = self.get_default_links()
         links.update(self.get_collection_actions())
@@ -120,11 +120,11 @@ class RetrieveResourceMixin(object):
         # queryset optimization hooks into `get_object()`
         instance = self.get_object()
         include_paths = self.get_include_paths(self.get_queryset())
-        linkages = self.group_include_paths(include_paths).keys()
+        linkages = list(self.group_include_paths(include_paths).keys())
 
         links = self.get_default_links()
         data = self.build_resource(instance, linkages)
-        included_data = self.get_included_data(instance, include_paths).values()
+        included_data = list(self.get_included_data(instance, include_paths).values())
 
         body = {
             'links': links,
@@ -178,7 +178,7 @@ class UpdateResourceMixin(object):
         serializer.is_valid(raise_exception=True)
 
         relationships = dict()
-        for relname, reldoc in data.get('relationships', {}).items():
+        for relname, reldoc in list(data.get('relationships', {}).items()):
             rel = self.get_relationship(relname)
             reldata = self.get_reldata(reldoc, relname)
 
@@ -195,7 +195,7 @@ class UpdateResourceMixin(object):
         instance = serializer.save()
 
         rel_errors = []
-        for rel, related in relationships.items():
+        for rel, related in list(relationships.items()):
             try:
                 self.set_related(rel, instance, related)
             except exceptions.APIError as e:

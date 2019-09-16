@@ -146,8 +146,8 @@ class FieldLookupFilter(backends.DjangoFilterBackend):
         filter_class = self.get_filter_class(view, queryset)
         filter_regex = self.filter_regex
 
-        filters = {filter_regex.match(p): v for p, v in request.query_params.items()}
-        filters = {p.group('lookup'): v for p, v in filters.items() if p is not None}
+        filters = {filter_regex.match(p): v for p, v in list(request.query_params.items())}
+        filters = {p.group('lookup'): v for p, v in list(filters.items()) if p is not None}
 
         if filter_class:
             if hasattr(filter_class, 'get_subset'):
@@ -163,7 +163,7 @@ class FieldLookupFilter(backends.DjangoFilterBackend):
     def _convert_exception(self, exc):
         errors = []
 
-        for param, exc_list in exc.message_dict.items():
+        for param, exc_list in list(exc.message_dict.items()):
             parameter = 'filter[%s]' % param
             errors += [FilterValidationError(detail, parameter) for detail in exc_list]
 

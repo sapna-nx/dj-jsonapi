@@ -114,7 +114,7 @@ class RelatedOrderingFilterTests(UTestCase):
         )
 
         view = InvalidFields()
-        with self.assertRaisesRegexp(AssertionError, 'must be valid resource fields'):
+        with self.assertRaisesRegex(AssertionError, 'must be valid resource fields'):
             self.filter.get_ordering_fields(view)
 
     def test_is_invalid_field(self):
