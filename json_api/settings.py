@@ -50,8 +50,8 @@ DEFAULTS.update({
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
-        'json_api.filters.RelatedOrderingFilter',
-        'json_api.filters.FieldLookupFilter',
+        # 'json_api.filters.RelatedOrderingFilter',
+        # 'json_api.filters.FieldLookupFilter',
     ),
     'ORDERING_PARAM': 'sort',
     'DEFAULT_PAGINATION_CLASS': 'json_api.pagination.PageNumberPagination',
@@ -67,7 +67,7 @@ DEFAULTS.update({
 })
 
 
-IMPORT_STRINGS = drf_settings.IMPORT_STRINGS + ('DEFAULT_INCLUSION_CLASS', )
+IMPORT_STRINGS = drf_settings.IMPORT_STRINGS + [ 'DEFAULT_INCLUSION_CLASS' ]
 
 
 api_settings = drf_settings.APISettings(USER_SETTINGS, DEFAULTS, IMPORT_STRINGS)

@@ -2,8 +2,8 @@
 from collections import OrderedDict
 from rest_framework import routers, views
 from rest_framework.response import Response
-from django.conf.urls import url
-from django.core.urlresolvers import NoReverseMatch
+from django.urls import path
+from django.urls.resolvers import NoReverseMatch
 from .utils.reverse import reverse
 
 
@@ -23,6 +23,7 @@ class BaseAPIRouter(routers.SimpleRouter):
                 'delete': 'destroy_relationship',
             },
             name='{basename}-relationship',
+            detail=False,
             initkwargs={'suffix': 'Relationship'},
         ),
 
@@ -38,6 +39,7 @@ class BaseAPIRouter(routers.SimpleRouter):
                 'delete': 'maybe_destroy_related',  # Acceptable on to-one
             },
             name='{basename}-related',
+            detail=False,
             initkwargs={'suffix': 'Related Data'},
         ),
         routers.Route(
@@ -48,6 +50,7 @@ class BaseAPIRouter(routers.SimpleRouter):
                 'delete': 'destroy_related',
             },
             name='{basename}-related-detail',
+            detail=False,
             initkwargs={'suffix': 'Related Data'},
         ),
     ]
