@@ -113,7 +113,7 @@ class BaseAPIRouter(routers.SimpleRouter):
                 )
                 view = viewset.as_view(mapping, **route.initkwargs)
                 name = route.name.format(basename=basename)
-                ret.append(url(regex, view, name=name))
+                ret.append(path(regex, view, name=name))
 
         return ret
 
