@@ -49,7 +49,7 @@ def _translate_reverse_relationships(opts, reverse_relations):
 def verbose_name(model):
     opts = model._meta
 
-    if model._deferred:
-        return verbose_name(opts.proxy_for_model)
+    # if model._deferred:
+    #     return verbose_name(opts.proxy_for_model)
 
     return opts.verbose_name.lower()

@@ -143,7 +143,7 @@ class FieldLookupFilter(backends.DjangoFilterBackend):
     filter_regex = re.compile(r'^filter\[(?P<lookup>.+)\]$')
 
     def filter_queryset(self, request, queryset, view):
-        filter_class = self.get_filter_class(view, queryset)
+        filter_class = self.get_filterset_class(view, queryset)
         filter_regex = self.filter_regex
 
         filters = {filter_regex.match(p): v for p, v in list(request.query_params.items())}

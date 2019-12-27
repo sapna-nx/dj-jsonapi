@@ -318,7 +318,6 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         else:
             accessor_name = self.get_related_accessor_name(rel, instance)
             related_object = getattr(instance, accessor_name, None)
-
             # It is possible that the relationship doesn't exist. In that
             # case, it is valid to return None
             if related_object is None:
@@ -329,10 +328,10 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             # TODO: determine if this is the correct behavior
             # if not viewset_queryset.filter(pk=related_object.pk).exists():
             # refetch object, this allows us to handle polymorphic scenarios
-            related_object = viewset_queryset.filter(pk=related_object.pk).get()
-            if related_object is None:
+            related_object_exists = viewset_queryset.filter(pk=related_object.pk)
+            if related_object_exists is None:
                 raise PermissionDenied
-
+            related_object = viewset_queryset.filter(pk=related_object.pk).get()
             # May raise a permission denied
             rel.viewset.check_object_permissions(self.request, related_object)
 

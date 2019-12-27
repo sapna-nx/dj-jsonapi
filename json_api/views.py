@@ -4,6 +4,7 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 from json_api.utils.reverse import reverse
 from json_api import routers, exceptions
+from rest_framework.viewsets import _is_extra_action
 
 
 class ResourceView(APIView):
@@ -119,7 +120,7 @@ class ResourceView(APIView):
             kwargs = getattr(attr, 'kwargs', None)
             httpmethods = getattr(attr, 'bind_to_methods', None)
             detail = getattr(attr, 'detail', True)
-            if httpmethods:
+            if _is_extra_action(attr):
                 url_path = kwargs.get('url_path', None) or methodname
                 if detail:
                     detail_views.append(url_path.replace('_', '-'))

@@ -2,7 +2,7 @@
 from collections import OrderedDict
 from rest_framework import routers, views
 from rest_framework.response import Response
-from django.urls import path
+from django.urls import path, re_path
 from django.urls.resolvers import NoReverseMatch
 from .utils.reverse import reverse
 
@@ -113,7 +113,7 @@ class BaseAPIRouter(routers.SimpleRouter):
                 )
                 view = viewset.as_view(mapping, **route.initkwargs)
                 name = route.name.format(basename=basename)
-                ret.append(path(regex, view, name=name))
+                ret.append(re_path(regex, view, name=name))
 
         return ret
 
@@ -123,7 +123,7 @@ class APIRouter(routers.DefaultRouter, BaseAPIRouter):
     """
     include_format_suffixes = False
 
-    def get_api_root_view(self):
+    def get_api_root_view(self, api_urls=None):
         """
         Return a view to use as the API root.
         """
