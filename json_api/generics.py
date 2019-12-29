@@ -11,6 +11,7 @@ from json_api.utils.urls import unquote_brackets
 from json_api.exceptions import PermissionDenied
 from json_api.settings import api_settings
 from json_api import serializers, views
+from model_utils.managers import InheritanceQuerySet
 
 
 class GenericResourceView(views.ResourceView, GenericAPIView):
@@ -318,6 +319,7 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
         else:
             accessor_name = self.get_related_accessor_name(rel, instance)
             related_object = getattr(instance, accessor_name, None)
+            print("related_object", related_object, accessor_name, rel.__dict__, instance)
             # It is possible that the relationship doesn't exist. In that
             # case, it is valid to return None
             if related_object is None:
@@ -329,9 +331,14 @@ class GenericResourceView(views.ResourceView, GenericAPIView):
             # if not viewset_queryset.filter(pk=related_object.pk).exists():
             # refetch object, this allows us to handle polymorphic scenarios
             related_object_exists = viewset_queryset.filter(pk=related_object.pk)
+            print(">>>>>>>>>>>>>>>>>>>>", related_object_exists, related_object_exists.__dict__)
             if related_object_exists is None:
                 raise PermissionDenied
-            related_object = viewset_queryset.filter(pk=related_object.pk).get()
+            if isinstance(related_object_exists, InheritanceQuerySet):
+                related_object = viewset_queryset.filter(pk=related_object.pk).select_subclasses()
+            else:
+                related_object = viewset_queryset.filter(pk=related_object.pk).get()
+
             # May raise a permission denied
             rel.viewset.check_object_permissions(self.request, related_object)
 

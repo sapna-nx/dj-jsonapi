@@ -45,7 +45,7 @@ setup(
     install_requires=['djangorestframework>=3.10', 'django-filter>=2.2.0'],
     packages=find_packages(exclude=('tests', )),
 
-    tests_require=['django>=1.8,<1.10', 'fantasy-database'],
+    tests_require=['django>=2.2', 'fantasy-database'],
 
     cmdclass={
         'test': Test,
