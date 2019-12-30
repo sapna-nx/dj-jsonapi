@@ -153,11 +153,11 @@ class FieldLookupFilter(backends.RestFrameworkFilterBackend):
 
         if filterset_class:
             if hasattr(filterset_class, 'get_filterset_class'):
-                filterset_class = filterset_class.get_filterset_class(filters)
+                # print("<<<<<<<<<<<<<<<<<<<<<", filterset_class.get_filterset_class)
+                filterset_class = filterset_class.get_filterset_class(filters).qs
             try:
                 return filterset_class(filters, queryset=queryset).qs
             except ValidationError as e:
-                return queryset
                 raise self._convert_exception(e)
 
         return queryset
