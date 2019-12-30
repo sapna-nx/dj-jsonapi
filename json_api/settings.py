@@ -45,13 +45,13 @@ DEFAULTS.update({
     ),
     'DEFAULT_PARSER_CLASSES': (
         'json_api.parsers.APIParser',
-        # 'json_api.parsers.FormParser',
-        # 'json_api.parsers.MultiPartParser',
+        'json_api.parsers.FormParser',
+        'json_api.parsers.MultiPartParser',
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
-        # 'json_api.filters.RelatedOrderingFilter',
-        # 'json_api.filters.FieldLookupFilter',
+        'json_api.filters.RelatedOrderingFilter',
+        'json_api.filters.FieldLookupFilter',
     ),
     'ORDERING_PARAM': 'sort',
     'DEFAULT_PAGINATION_CLASS': 'json_api.pagination.PageNumberPagination',

@@ -82,7 +82,6 @@ class ListResourceMixin(object):
     """
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-
         include_paths = self.get_include_paths(queryset)
         linkages = list(self.group_include_paths(include_paths).keys())
 
