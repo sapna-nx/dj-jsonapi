@@ -2,7 +2,7 @@
 import re
 from django.core.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
-from django_filters.rest_framework import backends
+from rest_framework_filters import backends, filterset
 # from django_filters.filterset import STRICTNESS
 from json_api.exceptions import ErrorList, NotFound, ParseError, FilterValidationError
 from json_api.settings import api_settings
@@ -131,7 +131,7 @@ class RelatedOrderingFilter(OrderingFilter):
         return field not in ordering_fields
 
 
-class FieldLookupFilter(backends.DjangoFilterBackend):
+class FieldLookupFilter(backends.RestFrameworkFilterBackend):
     """
     Wraps DRF-filters `DjangoFilterBackend` to support JSON-API compatible query string
     syntax. The filter backend is agnostic to the format of the lookup syntax, as long as
@@ -143,19 +143,21 @@ class FieldLookupFilter(backends.DjangoFilterBackend):
     filter_regex = re.compile(r'^filter\[(?P<lookup>.+)\]$')
 
     def filter_queryset(self, request, queryset, view):
-        filter_class = self.get_filterset_class(view, queryset)
+        # print("::::::", self, request, queryset, view)
+        filterset_class = self.get_filterset_class(view, queryset)
         filter_regex = self.filter_regex
 
         filters = {filter_regex.match(p): v for p, v in list(request.query_params.items())}
         filters = {p.group('lookup'): v for p, v in list(filters.items()) if p is not None}
+        # print(">>>>>", filterset_class, filter_regex, filters, list(request.query_params.items()), list(filters.items()))
 
-        if filter_class:
-            if hasattr(filter_class, 'get_subset'):
-                filter_class = filter_class.get_subset(filters)
-
+        if filterset_class:
+            if hasattr(filterset_class, 'get_filterset_class'):
+                filterset_class = filterset_class.get_filterset_class(filters)
             try:
-                return filter_class(filters, queryset=queryset).qs
+                return filterset_class(filters, queryset=queryset).qs
             except ValidationError as e:
+                return queryset
                 raise self._convert_exception(e)
 
         return queryset
