@@ -149,12 +149,18 @@ class FieldLookupFilter(backends.RestFrameworkFilterBackend):
 
         filters = {filter_regex.match(p): v for p, v in list(request.query_params.items())}
         filters = {p.group('lookup'): v for p, v in list(filters.items()) if p is not None}
-        # print(">>>>>", filterset_class, filter_regex, filters, list(request.query_params.items()), list(filters.items()))
+        # print(">>>>>", filterset_class, filter_regex, filters, filters.items(), list(request.query_params.items()), list(filters.items()))
 
         if filterset_class:
-            if hasattr(filterset_class, 'get_filterset_class'):
-                # print("<<<<<<<<<<<<<<<<<<<<<", filterset_class.get_filterset_class)
-                filterset_class = filterset_class.get_filterset_class(filters).qs
+            # if hasattr(filterset_class, 'related_filters'):
+               
+            #     filters_abc = filterset_class.related_filters
+            #     for key in list(filters):
+            #         print ("key", key)
+            #         print ("value", filters[key])
+            #     print("<<<<<<<<<<<<<<<<<<<<<", filters)
+
+                # filterset_class = filterset_class(filters).qs
             try:
                 return filterset_class(filters, queryset=queryset).qs
             except ValidationError as e:

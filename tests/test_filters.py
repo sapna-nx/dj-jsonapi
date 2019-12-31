@@ -314,7 +314,7 @@ class FieldLookupFilterInterfaceTests(TestCase):
 
     def test_lookup_parsing(self):
         class _BookView(BookView):
-            filter_fields = ['author']
+            filterset_fields = ['author']
 
         view = _BookView.as_view()
         request = factory.get('/', {'filter[author]': 1})
