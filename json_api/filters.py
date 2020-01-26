@@ -84,7 +84,7 @@ class RelatedOrderingFilter(OrderingFilter):
 
         return ordering_fields
 
-    def remove_invalid_fields(self, queryset, fields, view):
+    def remove_invalid_fields(self, queryset, fields, view, request):
         invalid_fields = [field.lstrip('-') for field in fields]
         invalid_fields = [f for f in invalid_fields if self.is_invalid_field(f, view)]
 
